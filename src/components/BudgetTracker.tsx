@@ -6,7 +6,7 @@ import { Budget } from '../types';
 
 const safeId = () => (crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2));
 
-export default function BudgetTracker({ budgets, onAdd, onUpdate, onDelete }:{
+function BudgetTracker({ budgets, onAdd, onUpdate, onDelete }:{
   budgets: Budget[];
   onAdd: (b: Budget)=>void;
   onUpdate: (b: Budget)=>void;
@@ -87,3 +87,5 @@ export default function BudgetTracker({ budgets, onAdd, onUpdate, onDelete }:{
     </div>
   );
 }
+
+export default React.memo(BudgetTracker);
