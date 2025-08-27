@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`estimateFederalTax > calculates tax at bracket boundaries for all filing statuses 1`] = `
+exports[`estimateTax > calculates federal tax at bracket boundaries for all filing statuses 1`] = `
 {
   "head": [
     1655,
