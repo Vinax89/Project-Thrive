@@ -17,7 +17,7 @@ import CalculatorModal from './components/modals/CalculatorModal';
 import { payoff } from './logic/debt';
 import { evaluateBadges } from './logic/badges';
 import { SEEDED } from './utils/constants';
-import { exportJSON, exportPDF, exportCSVBudgets } from './utils/export';
+import { exportJSON, exportPDF, exportCSVBudgets, exportICS } from './utils/export';
 import toast from 'react-hot-toast';
 import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan, Transaction } from './types';
 
@@ -207,8 +207,8 @@ export default function App(){
     );
   }
 
-  function handleExport(kind: 'json'|'csv'|'pdf') {
-    const payload = { budgets, recurring, goals, debts, bnpl };
+  function handleExport(kind: 'json'|'csv'|'pdf'|'ics') {
+    const payload = { budgets, recurring, goals, debts, bnpl, obligations };
     if (kind === 'json') exportJSON('chatpay-data.json', payload);
     if (kind === 'csv') exportCSVBudgets('chatpay-budgets.csv', budgets);
     if (kind === 'pdf') exportPDF('chatpay-summary.pdf',
@@ -219,6 +219,7 @@ export default function App(){
       'Debts: ' + debts.length + '\n' +
       'BNPL: ' + bnpl.length + '\n'
     );
+    if (kind === 'ics') exportICS('chatpay-schedule.ics', bnpl, obligations);
   }
 
   function handleImport(payload: ImportPayload) {
@@ -260,6 +261,7 @@ export default function App(){
             <Button variant="secondary" onClick={()=>handleExport('json')}>Export JSON</Button>
             <Button variant="secondary" onClick={()=>handleExport('csv')}>CSV</Button>
             <Button variant="secondary" onClick={()=>handleExport('pdf')}>PDF</Button>
+            <Button variant="secondary" onClick={()=>handleExport('ics')}>ICS</Button>
             <Button variant="secondary" onClick={()=>setToken(null)}>Logout</Button>
             <ThemeToggle />
           </div>
