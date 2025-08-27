@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import Button from './Button';
 import Input from './Input';
 import Modal from './Modal';
-import { Budget } from '../types';
+import { Budget, BankTransaction } from '../types';
 
 const safeId = () => (crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2));
 
@@ -89,3 +89,55 @@ function BudgetTracker({ budgets, onAdd, onUpdate, onDelete }:{
 }
 
 export default React.memo(BudgetTracker);
+
+export function TransactionMapper({
+  open,
+  transactions,
+  budgets,
+  onSave,
+  onClose
+}:{
+  open: boolean;
+  transactions: BankTransaction[];
+  budgets: Budget[];
+  onSave: (tx: BankTransaction[]) => void;
+  onClose: () => void;
+}){
+  const [mapped, setMapped] = useState<BankTransaction[]>(() => transactions.map(t => ({...t})));
+
+  return (
+    <Modal open={open} onClose={onClose} title="Map Transactions">
+      <div className="space-y-2 max-h-96 overflow-y-auto">
+        {mapped.map((t, idx) => (
+          <div key={t.id} className="flex items-center gap-2">
+            <div className="flex-1">
+              <div className="text-sm">{t.name}</div>
+              <div className="text-xs text-gray-500">${t.amount.toFixed(2)} on {t.date}</div>
+            </div>
+            <select
+              value={t.category ?? ''}
+              onChange={e => {
+                const val = e.target.value || undefined;
+                setMapped(prev => {
+                  const copy = [...prev];
+                  copy[idx] = { ...copy[idx], category: val };
+                  return copy;
+                });
+              }}
+              className="border rounded p-1 text-sm bg-white dark:bg-gray-800"
+            >
+              <option value="">Uncategorized</option>
+              {budgets.map(b => (
+                <option key={b.id} value={b.category}>{b.category}</option>
+              ))}
+            </select>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button onClick={() => onSave(mapped)}>Save</Button>
+      </div>
+    </Modal>
+  );
+}

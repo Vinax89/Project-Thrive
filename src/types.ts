@@ -60,6 +60,24 @@ export interface Transaction {
   category?: string;
 }
 
+export interface Account {
+  id: string;
+  name: string;
+  mask?: string;
+  officialName?: string;
+  type: string;
+  subtype?: string;
+}
+
+export interface BankTransaction {
+  id: string;
+  accountId: string;
+  name: string;
+  amount: number;
+  date: string;
+  category?: string;
+}
+
 export interface CashFlowProjectionPoint {
   label: string;
   endingBalance: number;
