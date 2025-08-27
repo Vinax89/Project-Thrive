@@ -2,7 +2,7 @@ module.exports = {
   root: true,
   env: {
     browser: true,
-    es2022: true,
+    es2020: true,
     node: true,
   },
   parser: '@typescript-eslint/parser',
@@ -13,12 +13,11 @@ module.exports = {
       jsx: true,
     },
   },
-  plugins: ['react', '@typescript-eslint', 'react-hooks'],
+  plugins: ['@typescript-eslint', 'react'],
   extends: [
     'eslint:recommended',
-    'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
-    'plugin:react-hooks/recommended',
+    'plugin:react/recommended',
   ],
   settings: {
     react: {
@@ -28,9 +27,5 @@ module.exports = {
   rules: {
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off',
-    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-    '@typescript-eslint/no-explicit-any': 'warn',
-    'react/display-name': 'off',
-    'react-hooks/rules-of-hooks': 'warn',
   },
 };
