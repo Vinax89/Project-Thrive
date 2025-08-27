@@ -1,0 +1,38 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`estimateFederalTax > calculates tax at bracket boundaries for all filing statuses 1`] = `
+{
+  "head": [
+    1655,
+    7241,
+    15469,
+    37417,
+    53977,
+    181954.5,
+  ],
+  "married_joint": [
+    2320,
+    10852,
+    34337,
+    78221,
+    111357,
+    196669.5,
+  ],
+  "married_separate": [
+    1160,
+    5426,
+    17168.5,
+    39110.5,
+    55678.5,
+    98334.75,
+  ],
+  "single": [
+    1160,
+    5426,
+    17168.5,
+    39110.5,
+    55678.5,
+    183647.25,
+  ],
+}
+`;
