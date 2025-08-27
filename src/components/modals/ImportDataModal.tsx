@@ -8,7 +8,7 @@ function validate(payload: any): payload is ImportPayload {
   return (
     Array.isArray(payload?.budgets) &&
     Array.isArray(payload?.debts) &&
-    Array.isArray(payload?.bnplPlans) &&
+    Array.isArray(payload?.bnpl) &&
     Array.isArray(payload?.recurring) &&
     Array.isArray(payload?.goals)
   );
@@ -36,7 +36,7 @@ export default function ImportDataModal({
     try {
       const json = JSON.parse(text);
       if (!validate(json)) {
-        setError('Invalid schema. Expect a JSON object with keys: budgets, debts, bnplPlans, recurring, goals');
+        setError('Invalid schema. Expect a JSON object with keys: budgets, debts, bnpl, recurring, goals');
         return;
       }
       onImport(json);
