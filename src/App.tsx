@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import Button from './components/Button';
 import ThemeToggle from './components/ThemeToggle';
 import CommandPalette from './components/CommandPalette';
@@ -77,13 +77,23 @@ export default function App(){
     ];
   }, [budgets, recurring]);
 
-  useHotkeys([
-    ['meta+k', ()=> setPaletteOpen(true)],
-    ['ctrl+k', ()=> setPaletteOpen(true)],
-    ['shift+b', ()=> setTab('budgets')],
-    ['shift+d', ()=> setShowManageDebts(true)],
-    ['shift+g', ()=> setTab('dashboard')],
-  ]);
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  const goBudgets = useCallback(() => setTab('budgets'), []);
+  const openManageDebts = useCallback(() => setShowManageDebts(true), []);
+  const goDashboard = useCallback(() => setTab('dashboard'), []);
+
+  const hotkeys = useMemo(
+    () => [
+      ['meta+k', openPalette],
+      ['ctrl+k', openPalette],
+      ['shift+b', goBudgets],
+      ['shift+d', openManageDebts],
+      ['shift+g', goDashboard],
+    ],
+    [openPalette, goBudgets, openManageDebts, goDashboard]
+  );
+
+  useHotkeys(hotkeys);
 
   function handleExport(kind: 'json'|'csv'|'pdf') {
     const payload = { budgets, recurring, goals, debts, bnpl: SEEDED.bnpl };
