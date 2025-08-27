@@ -70,3 +70,7 @@ The project follows a modular design with functional React components and strict
 ## Reporting Issues
 
 Use the GitHub issue tracker to report bugs or request features. Provide as much detail as possible, including steps to reproduce and screenshots where helpful.
+
+## License
+
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
