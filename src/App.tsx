@@ -19,7 +19,7 @@ import { evaluateBadges } from './logic/badges';
 import { SEEDED } from './utils/constants';
 import { exportJSON, exportCSV, exportPDF, exportCSVBudgets } from './utils/export';
 import toast from 'react-hot-toast';
-import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan } from './types';
+import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan, Transaction } from './types';
 
 const DebtVelocityChart = React.lazy(() => import('./components/reports/DebtVelocityChart'));
 const SpendingHeatmap = React.lazy(() => import('./components/reports/SpendingHeatmap'));
@@ -189,6 +189,10 @@ export default function App(){
     }
   }, [obligations, addObligationApi, updateObligationApi, deleteObligationApi]);
 
+  const handleTransactions = useCallback((ts: Transaction[]) => {
+    toast.success('Imported ' + ts.length + ' transactions');
+  }, []);
+
   if (!token) {
     return (
       <div className="p-4 max-w-sm mx-auto space-y-2">
@@ -220,10 +224,12 @@ export default function App(){
   function handleImport(payload: ImportPayload) {
     try {
       payload.budgets.forEach((b) => addBudget(b));
-      payload.debts.forEach((d) => addDebtApi(d));
+      handleDebtsChange(payload.debts);
       setRecurring(payload.recurring);
-      payload.goals.forEach((g) => addGoalApi(g));
+      handleGoalsChange(payload.goals);
+      if (payload.obligations) handleObligationsChange(payload.obligations);
       if (payload.bnpl) payload.bnpl.forEach((p) => addBnplApi(p));
+      if (payload.transactions) handleTransactions(payload.transactions);
       toast.success('Import complete');
     } catch (e) {
       toast.error('Import failed: ' + (e as any)?.message);
@@ -343,7 +349,13 @@ export default function App(){
       <ManageDebtsModal open={showManageDebts} onClose={()=>setShowManageDebts(false)} debts={debts} onChange={handleDebtsChange} />
       <ManageGoalsModal open={showManageGoals} onClose={()=>setShowManageGoals(false)} goals={goals} onChange={handleGoalsChange} />
       <ManageObligationsModal open={showManageObligations} onClose={()=>setShowManageObligations(false)} obligations={obligations} onChange={handleObligationsChange} />
-      <ImportDataModal open={showImport} onClose={()=>setShowImport(false)} onImport={handleImport} />
+      <ImportDataModal
+        open={showImport}
+        onClose={()=>setShowImport(false)}
+        onImport={handleImport}
+        budgets={budgets}
+        onTransactions={handleTransactions}
+      />
       <CalculatorModal open={showCalc} onClose={()=>setShowCalc(false)} debts={debts} />
     </div>
   );

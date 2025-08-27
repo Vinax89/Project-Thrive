@@ -42,12 +42,31 @@ const goalSchema = z.object({
   priority: z.number().optional()
 });
 
+const obligationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  amount: z.number(),
+  cadence: z.enum(['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly']),
+  dueDate: z.string().optional()
+});
+
+const transactionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(['income', 'expense']),
+  amount: z.number(),
+  date: z.string(),
+  category: z.string().optional()
+});
+
 export const importSchema = z.object({
   budgets: z.array(budgetSchema),
   debts: z.array(debtSchema),
   bnpl: z.array(bnplPlanSchema),
   recurring: z.array(recurringTransactionSchema),
-  goals: z.array(goalSchema)
+  goals: z.array(goalSchema),
+  obligations: z.array(obligationSchema).optional(),
+  transactions: z.array(transactionSchema).optional()
 });
 
 export type ImportPayload = z.infer<typeof importSchema>;

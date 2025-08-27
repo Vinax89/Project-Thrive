@@ -71,4 +71,6 @@ export interface ImportPayload {
   bnpl: BNPLPlan[];
   recurring: RecurringTransaction[];
   goals: Goal[];
+  obligations?: Obligation[];
+  transactions?: Transaction[];
 }
