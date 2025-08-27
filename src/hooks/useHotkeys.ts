@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 interface ParsedBinding {
   key: string;
@@ -9,7 +9,11 @@ interface ParsedBinding {
 }
 
 export default function useHotkeys(bindings: Array<[string, (e: KeyboardEvent) => void]>) {
-  const parsedBindings = useMemo<ParsedBinding[]>(
+  // Consumers should memoize `bindings` to avoid unnecessary updates
+  // (e.g. with `useMemo`).
+  const bindingsRef = useRef<ParsedBinding[]>([]);
+
+  bindingsRef.current = useMemo<ParsedBinding[]>(
     () =>
       bindings.map(([combo, fn]) => {
         const parts = combo.toLowerCase().split('+').map((s) => s.trim());
@@ -26,7 +30,7 @@ export default function useHotkeys(bindings: Array<[string, (e: KeyboardEvent) =
 
   useEffect(() => {
     function handler(e: KeyboardEvent) {
-      for (const { key, ctrl, meta, shift, fn } of parsedBindings) {
+      for (const { key, ctrl, meta, shift, fn } of bindingsRef.current) {
         if (meta && !e.metaKey) continue;
         if (ctrl && !e.ctrlKey) continue;
         if (shift && !e.shiftKey) continue;
@@ -40,5 +44,5 @@ export default function useHotkeys(bindings: Array<[string, (e: KeyboardEvent) =
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [parsedBindings]);
+  }, []);
 }
