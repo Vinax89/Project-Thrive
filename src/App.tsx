@@ -18,7 +18,7 @@ import { evaluateBadges } from './logic/badges';
 import { SEEDED } from './utils/constants';
 import { exportJSON, exportCSV, exportPDF, exportCSVBudgets } from './utils/export';
 import toast from 'react-hot-toast';
-import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan } from './types';
+import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan, BankTransaction } from './types';
 
 const DebtVelocityChart = React.lazy(() => import('./components/reports/DebtVelocityChart'));
 const SpendingHeatmap = React.lazy(() => import('./components/reports/SpendingHeatmap'));
@@ -121,6 +121,13 @@ export default function App(){
       'Debts: ' + debts.length + '\n' +
       'BNPL: ' + bnpl.length + '\n'
     );
+  }
+
+  function handleTransactionImport(txns: BankTransaction[]) {
+    setBudgets(prev => prev.map(b => {
+      const added = txns.filter(t => t.category === b.category).reduce((s, t) => s + t.amount, 0);
+      return added ? { ...b, spent: b.spent + added } : b;
+    }));
   }
 
   function handleImport(payload: ImportPayload) {
@@ -248,7 +255,13 @@ export default function App(){
       <ManageDebtsModal open={showManageDebts} onClose={()=>setShowManageDebts(false)} debts={debts} onChange={setDebts} />
       <ManageGoalsModal open={showManageGoals} onClose={()=>setShowManageGoals(false)} goals={goals} onChange={setGoals} />
       <ManageObligationsModal open={showManageObligations} onClose={()=>setShowManageObligations(false)} obligations={obligations} onChange={setObligations} />
-      <ImportDataModal open={showImport} onClose={()=>setShowImport(false)} onImport={handleImport} />
+      <ImportDataModal
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImport={handleImport}
+        budgets={budgets}
+        onTransactions={handleTransactionImport}
+      />
       <CalculatorModal open={showCalc} onClose={()=>setShowCalc(false)} debts={debts} />
     </div>
   );
