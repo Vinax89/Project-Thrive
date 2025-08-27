@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useMemo, useState, lazy } from 'react';
 import Button from './components/Button';
 import ThemeToggle from './components/ThemeToggle';
 import CommandPalette from './components/CommandPalette';
@@ -6,10 +6,8 @@ import ApiStatusBanner from './components/system/ApiStatusBanner';
 import useHotkeys from './hooks/useHotkeys';
 import useRemoteData from './hooks/useRemoteData';
 import BudgetTracker from './components/BudgetTracker';
-import CashFlowProjection from './components/CashFlowProjection';
 import BNPLTrackerModal from './components/BNPLTrackerModal';
 import ShiftImpactModal from './components/ShiftImpactModal';
-import DebtScheduleViewer from './components/DebtScheduleViewer';
 import ManageDebtsModal from './components/modals/ManageDebtsModal';
 import ManageGoalsModal from './components/modals/ManageGoalsModal';
 import ManageObligationsModal from './components/modals/ManageObligationsModal';
@@ -21,11 +19,14 @@ import { SEEDED } from './utils/constants';
 import { exportJSON, exportPDF, exportCSVBudgets, exportICS } from './utils/export';
 import toast from 'react-hot-toast';
 import { Budget, Goal, RecurringTransaction, Obligation, Debt, Transaction } from './types';
+import ApiOkPill from './components/system/ApiOkPill';
 
-const DebtVelocityChart = React.lazy(() => import('./components/reports/DebtVelocityChart'));
-const SpendingHeatmap = React.lazy(() => import('./components/reports/SpendingHeatmap'));
-const GoalWaterfall = React.lazy(() => import('./components/reports/GoalWaterfall'));
-const SankeyFlow = React.lazy(() => import('./components/reports/SankeyFlow'));
+const CashFlowProjection = lazy(() => import('./components/CashFlowProjection'));
+const DebtScheduleViewer = lazy(() => import('./components/DebtScheduleViewer'));
+const DebtVelocityChart = lazy(() => import('./components/reports/DebtVelocityChart'));
+const SpendingHeatmap = lazy(() => import('./components/reports/SpendingHeatmap'));
+const GoalWaterfall = lazy(() => import('./components/reports/GoalWaterfall'));
+const SankeyFlow = lazy(() => import('./components/reports/SankeyFlow'));
 
 type Tab = 'dashboard' | 'budgets' | 'projection' | 'reports';
 
@@ -72,6 +73,11 @@ export default function App(){
   const [showCalc, setShowCalc] = useState(false);
 
   const monthlyDebtBudget = useMemo(()=> budgets.find(b=>b.category==='Debt')?.allocated ?? 1500, [budgets]);
+
+  const badges = useMemo(() => {
+    const monthTotal = debts.reduce((s,d)=> s + (d.minPayment ?? 0), 0);
+    return { overdue: 0, dueThisWeek: 0, monthTotal };
+  }, [debts]);
 
   const plan = useMemo(()=> {
     const unlocked = new Set<string>();
@@ -299,6 +305,12 @@ export default function App(){
             <Button variant="secondary" onClick={()=>handleExport('ics')}>ICS</Button>
             <Button variant="secondary" onClick={()=>setToken(null)}>Logout</Button>
             <ThemeToggle />
+            <ApiOkPill />
+            <div className="hidden sm:flex items-center gap-2 ml-2">
+              <span className="px-2 py-1 rounded-full bg-red-100 text-red-800 text-xs">Overdue: {badges.overdue}</span>
+              <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-800 text-xs">Week: {badges.dueThisWeek}</span>
+              <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-800 text-xs">{"Month: $" + badges.monthTotal.toLocaleString()}</span>
+            </div>
           </div>
         </div>
       </header>
@@ -323,7 +335,9 @@ export default function App(){
                 </div>
               </div>
             </div>
-            <DebtScheduleViewer plan={plan} />
+            <Suspense fallback={<div className="p-4">Loading…</div>}>
+              <DebtScheduleViewer plan={plan} />
+            </Suspense>
           </div>
         )}
 
@@ -337,7 +351,9 @@ export default function App(){
         )}
 
         {tab === 'projection' && (
-          <CashFlowProjection currentBalance={0} recurring={recurring} months={12} />
+          <Suspense fallback={<div className="p-4">Loading…</div>}>
+            <CashFlowProjection currentBalance={0} recurring={recurring} months={12} />
+          </Suspense>
         )}
 
         {tab === 'reports' && (
