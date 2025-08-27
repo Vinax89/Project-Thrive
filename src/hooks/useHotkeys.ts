@@ -59,7 +59,12 @@ export default function useHotkeys(bindings: Array<[string, (e: KeyboardEvent) =
       }
     }
 
+    if (typeof window === 'undefined') return;
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('keydown', handler);
+      }
+    };
   }, []);
 }
