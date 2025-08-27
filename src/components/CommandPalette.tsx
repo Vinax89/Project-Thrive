@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import useHotkeys from '../hooks/useHotkeys';
 
 type Command = { id: string; label: string; action: () => void; keywords?: string; };
 
@@ -13,6 +14,10 @@ export default function CommandPalette({ open, onClose, commands }:{
     if (!q) return commands;
     return commands.filter(c => c.label.toLowerCase().includes(q) || (c.keywords||'').includes(q));
   }, [commands, query]);
+
+  const escBinding = useMemo(() => (open ? [['escape', () => onClose()]] : []), [open, onClose]);
+  useHotkeys(escBinding);
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50">
