@@ -22,7 +22,7 @@ import DebtVelocityChart from './components/reports/DebtVelocityChart';
 import SpendingHeatmap from './components/reports/SpendingHeatmap';
 import GoalWaterfall from './components/reports/GoalWaterfall';
 import SankeyFlow from './components/reports/SankeyFlow';
-import { Budget, Goal, RecurringTransaction, Obligation, Debt } from './types';
+import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan } from './types';
 
 type Tab = 'dashboard' | 'budgets' | 'projection' | 'reports';
 
@@ -34,6 +34,7 @@ export default function App(){
   const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring);
   const [goals, setGoals] = useState<Goal[]>(() => SEEDED.goals);
   const [debts, setDebts] = useState<Debt[]>(() => SEEDED.debts.map(d => ({ ...d })));
+  const [bnpl, setBnpl] = useState<BNPLPlan[]>(() => SEEDED.bnpl);
   const [obligations, setObligations] = useState<Obligation[]>([]);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -108,7 +109,7 @@ export default function App(){
   }, []);
 
   function handleExport(kind: 'json'|'csv'|'pdf') {
-    const payload = { budgets, recurring, goals, debts, bnpl: SEEDED.bnpl };
+    const payload = { budgets, recurring, goals, debts, bnpl };
     if (kind === 'json') exportJSON('chatpay-data.json', payload);
     if (kind === 'csv') exportCSVBudgets('chatpay-budgets.csv', budgets);
     if (kind === 'pdf') exportPDF('chatpay-summary.pdf',
@@ -117,7 +118,7 @@ export default function App(){
       'Recurring: ' + recurring.length + '\n' +
       'Goals: ' + goals.length + '\n' +
       'Debts: ' + debts.length + '\n' +
-      'BNPL: ' + (SEEDED.bnpl as any[]).length + '\n'
+      'BNPL: ' + bnpl.length + '\n'
     );
   }
 
@@ -127,6 +128,7 @@ export default function App(){
       setDebts(payload.debts);
       setRecurring(payload.recurring);
       setGoals(payload.goals);
+      if (payload.bnpl) setBnpl(payload.bnpl);
       toast.success('Import complete');
     } catch (e) {
       toast.error('Import failed: ' + (e as any)?.message);
@@ -238,7 +240,7 @@ export default function App(){
         ]}
       />
 
-      <BNPLTrackerModal open={showBNPL} onClose={()=>setShowBNPL(false)} plans={SEEDED.bnpl} />
+      <BNPLTrackerModal open={showBNPL} onClose={()=>setShowBNPL(false)} plans={bnpl} />
       <ShiftImpactModal open={showShiftImpact} onClose={()=>setShowShiftImpact(false)} />
       <ManageDebtsModal open={showManageDebts} onClose={()=>setShowManageDebts(false)} debts={debts} onChange={setDebts} />
       <ManageGoalsModal open={showManageGoals} onClose={()=>setShowManageGoals(false)} goals={goals} onChange={setGoals} />
