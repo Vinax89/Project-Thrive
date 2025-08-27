@@ -1,6 +1,7 @@
 import React from 'react';
 import Modal from './Modal';
 import { BNPLPlan } from '../types';
+import { isReminderEnabled, setReminderEnabled } from '../utils/notifications';
 
 function daysUntil(dIso: string) {
   const d = new Date(dIso + 'T00:00:00Z'); // UTC midnight
@@ -29,7 +30,16 @@ export default function BNPLTrackerModal({ open, onClose, plans }:{
                 <div className="font-semibold">{p.provider}</div>
                 <div className="text-sm text-gray-600 dark:text-gray-300">{p.description}</div>
               </div>
-              <div className="text-sm">Remaining: <b>${p.remaining.toFixed(2)}</b> / ${p.total.toFixed(2)}</div>
+              <div className="text-sm flex flex-col items-end gap-1">
+                <div>Remaining: <b>${p.remaining.toFixed(2)}</b> / ${p.total.toFixed(2)}</div>
+                <label className="text-xs flex items-center gap-1">
+                  <input type="checkbox"
+                    checked={isReminderEnabled(p.id)}
+                    onChange={e=>setReminderEnabled(p.id, e.target.checked)}
+                  />
+                  Remind me
+                </label>
+              </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {p.dueDates.map(d => (

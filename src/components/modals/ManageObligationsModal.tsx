@@ -3,6 +3,7 @@ import Modal from '../Modal';
 import Button from '../Button';
 import ObligationModal from './ObligationModal';
 import type { Obligation } from '../../types';
+import { isReminderEnabled, setReminderEnabled } from '../../utils/notifications';
 
 export default function ManageObligationsModal({
   open, onClose, obligations, onChange
@@ -28,6 +29,7 @@ export default function ManageObligationsModal({
               <th className="py-2 pr-4">Amount</th>
               <th className="py-2 pr-4">Cadence</th>
               <th className="py-2 pr-4">Due</th>
+              <th className="py-2 pr-4">Remind</th>
               <th className="py-2 pr-4">Actions</th>
             </tr>
           </thead>
@@ -38,6 +40,11 @@ export default function ManageObligationsModal({
                 <td className="py-2 pr-4">${o.amount.toFixed(2)}</td>
                 <td className="py-2 pr-4">{o.cadence}</td>
                 <td className="py-2 pr-4">{o.dueDate || '—'}</td>
+                <td className="py-2 pr-4">
+                  {o.dueDate ? (
+                    <input type="checkbox" checked={isReminderEnabled(o.id)} onChange={e=>setReminderEnabled(o.id, e.target.checked)} />
+                  ) : '—'}
+                </td>
                 <td className="py-2 pr-4">
                   <div className="flex gap-2">
                     <Button variant="secondary" onClick={() => setEditing(o)}>Edit</Button>

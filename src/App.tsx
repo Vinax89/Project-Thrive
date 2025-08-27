@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useMemo, useState, useEffect } from 'react';
 import Button from './components/Button';
 import ThemeToggle from './components/ThemeToggle';
 import CommandPalette from './components/CommandPalette';
@@ -17,6 +17,7 @@ import { payoff } from './logic/debt';
 import { evaluateBadges } from './logic/badges';
 import { SEEDED } from './utils/constants';
 import { exportJSON, exportCSV, exportPDF, exportCSVBudgets } from './utils/export';
+import { startDailyChecks } from './utils/notifications';
 import toast from 'react-hot-toast';
 import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan } from './types';
 
@@ -46,6 +47,7 @@ export default function App(){
   const [showManageObligations, setShowManageObligations] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showCalc, setShowCalc] = useState(false);
+  useEffect(() => { startDailyChecks(bnpl, obligations); }, [bnpl, obligations]);
 
   const monthlyDebtBudget = useMemo(()=> budgets.find(b=>b.category==='Debt')?.allocated ?? 1500, [budgets]);
 
