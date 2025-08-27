@@ -22,7 +22,7 @@ import DebtVelocityChart from './components/reports/DebtVelocityChart';
 import SpendingHeatmap from './components/reports/SpendingHeatmap';
 import GoalWaterfall from './components/reports/GoalWaterfall';
 import SankeyFlow from './components/reports/SankeyFlow';
-import { Budget, Goal, RecurringTransaction, Obligation, Debt } from './types';
+import { Budget, Goal, RecurringTransaction, Obligation, Debt, ImportPayload } from './types';
 
 type Tab = 'dashboard' | 'budgets' | 'projection' | 'reports';
 
@@ -121,12 +121,12 @@ export default function App(){
     );
   }
 
-  function handleImport(payload: any) {
+  function handleImport(payload: ImportPayload) {
     try {
-      if (payload.budgets) setBudgets(payload.budgets);
-      if (payload.debts) setDebts(payload.debts);
-      if (payload.recurring) setRecurring(payload.recurring);
-      if (payload.goals) setGoals(payload.goals);
+      if (payload.budgets !== undefined) setBudgets(payload.budgets);
+      if (payload.debts !== undefined) setDebts(payload.debts);
+      if (payload.recurring !== undefined) setRecurring(payload.recurring);
+      if (payload.goals !== undefined) setGoals(payload.goals);
       toast.success('Import complete');
     } catch (e) {
       toast.error('Import failed: ' + (e as any)?.message);

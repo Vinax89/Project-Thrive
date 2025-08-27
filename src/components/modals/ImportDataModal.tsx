@@ -1,20 +1,15 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
-import type { Debt } from '../../types';
-
-type ImportPayload = {
-  budgets?: any[];
-  debts?: Debt[];
-  bnpl?: any[];
-  recurring?: any[];
-  goals?: any[];
-};
+import type { ImportPayload } from '../../types';
 
 function validate(p: any): p is ImportPayload {
   if (typeof p !== 'object' || p === null) return false;
-  const allowed = ['budgets','debts','bnpl','recurring','goals'];
-  for (const k of Object.keys(p)) if (!allowed.includes(k)) return false;
+  const allowed = ['budgets', 'debts', 'bnpl', 'recurring', 'goals'];
+  for (const k of Object.keys(p)) {
+    if (!allowed.includes(k)) return false;
+    if (!Array.isArray((p as any)[k])) return false;
+  }
   return true;
 }
 
