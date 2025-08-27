@@ -11,7 +11,9 @@ export default function CommandPalette({ open, onClose, commands }:{
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return commands;
-    return commands.filter(c => c.label.toLowerCase().includes(q) || (c.keywords||'').includes(q));
+    return commands.filter(
+      c => c.label.toLowerCase().includes(q) || (c.keywords || '').toLowerCase().includes(q)
+    );
   }, [commands, query]);
   if (!open) return null;
   return (
