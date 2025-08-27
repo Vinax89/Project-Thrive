@@ -6,6 +6,8 @@ Financial management app built with React, TypeScript, Vite and Tailwind CSS.
 
 ### Installation
 
+Requires **Node.js 18+** and **npm 9+** (npm is included with Node.js). No other global tools are required.
+
 ```bash
 npm install
 ```
