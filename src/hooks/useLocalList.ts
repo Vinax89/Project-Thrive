@@ -1,13 +1,11 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function useLocalList<T>(key: string, initial: T[]) {
   const hasStorage = typeof window !== 'undefined' && 'localStorage' in window;
-  if (!hasStorage) {
-    const noop: Dispatch<SetStateAction<T[]>> = () => {};
-    return [initial, noop] as const;
-  }
 
   const [list, setList] = useState<T[]>(() => {
+    if (!hasStorage) return initial;
+
     const raw = window.localStorage.getItem(key);
     if (!raw) return initial;
     try {
@@ -21,8 +19,12 @@ export default function useLocalList<T>(key: string, initial: T[]) {
       return initial;
     }
   });
+
   useEffect(() => {
+    if (!hasStorage) return;
+
     window.localStorage.setItem(key, JSON.stringify(list));
-  }, [key, list]);
+  }, [hasStorage, key, list]);
+
   return [list, setList] as const;
 }
