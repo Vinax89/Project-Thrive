@@ -3,13 +3,34 @@ import React, { useEffect, useState } from 'react';
 type Theme = 'light' | 'dark' | 'system';
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem('theme') as Theme) || 'system');
+  const getInitialTheme = (): Theme => {
+    if (typeof window !== 'undefined') {
+      try {
+        return (window.localStorage.getItem('theme') as Theme) || 'system';
+      } catch {
+        return 'system';
+      }
+    }
+    return 'system';
+  };
+
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
     const root = document.documentElement;
-    const systemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const systemDark = window.matchMedia
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : false;
     const isDark = theme === 'dark' || (theme === 'system' && systemDark);
     root.classList.toggle('dark', isDark);
-    localStorage.setItem('theme', theme);
+
+    try {
+      window.localStorage.setItem('theme', theme);
+    } catch {
+      /* ignore */
+    }
   }, [theme]);
   return (
     <div className="inline-flex items-center gap-2 text-sm">
