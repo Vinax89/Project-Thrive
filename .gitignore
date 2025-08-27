@@ -1,4 +1,4 @@
-# Ignore build and coverage directories
+# Ignore dependencies, build outputs, and coverage reports
 node_modules/
 dist/
 coverage/
