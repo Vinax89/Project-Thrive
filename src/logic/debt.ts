@@ -55,14 +55,19 @@ export function payoff(
   }
 
   const pickTarget = () => {
-    const active = ds.filter(d => (balances[d.id] ?? 0) > EPS);
-    if (!active.length) return undefined;
-    if (method === 'snowball') {
-      active.sort((a,b) => (balances[a.id]-balances[b.id]) || a.apr - b.apr);
-    } else {
-      active.sort((a,b) => b.apr - a.apr || (balances[a.id]-balances[b.id]));
-    }
-    return active[0].id;
+    return ds.reduce<Debt | undefined>((best, d) => {
+      const bal = balances[d.id];
+      if (bal <= EPS) return best;
+      if (!best) return d;
+      const bestBal = balances[best.id];
+      if (method === 'snowball') {
+        if (bal < bestBal || (bal === bestBal && d.apr < best.apr)) return d;
+        return best;
+      } else {
+        if (d.apr > best.apr || (d.apr === best.apr && bal < bestBal)) return d;
+        return best;
+      }
+    }, undefined)?.id;
   };
 
   while (!allZero() && month < maxMonths) {
