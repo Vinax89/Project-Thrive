@@ -1,0 +1,10 @@
+{
+  "close": "Cerrar",
+  "command.title": "Paleta de comandos",
+  "command.placeholder": "Escribe un comando...",
+  "command.esc": "Esc para cerrar",
+  "command.noResults": "Sin resultados",
+  "settings.title": "Configuración",
+  "settings.language": "Idioma",
+  "settings.currency": "Moneda"
+}

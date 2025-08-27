@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import useHotkeys from '../hooks/useHotkeys';
+import { useIntl } from 'react-intl';
 
 type Command = { id: string; label: string; action: () => void; keywords?: string; };
 
@@ -9,8 +10,11 @@ export default function CommandPalette({ open, onClose, commands }:{
   const [query, setQuery] = useState('');
   const [index, setIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const itemsRef = useRef<Array<HTMLButtonElement|null>>([]);
+  const intl = useIntl();
   useEffect(() => { if (open) setTimeout(()=>inputRef.current?.focus(), 0); else setQuery(''); }, [open]);
   useEffect(() => { if (open) setIndex(0); }, [open, query]);
+  useEffect(() => { itemsRef.current = []; }, [list]);
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -41,37 +45,53 @@ export default function CommandPalette({ open, onClose, commands }:{
   ), [open, onClose, list, index]);
   useHotkeys(hotkeys);
 
+  useEffect(() => {
+    if (open) {
+      itemsRef.current[index]?.focus();
+      itemsRef.current[index]?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [index, open]);
+
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative max-w-xl mx-auto mt-24 rounded-xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700">
-        <div className="bg-white dark:bg-gray-900 p-3 border-b border-gray-200 dark:border-gray-700">
-          <input ref={inputRef} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Type a command..."
-            className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">Esc to close</div>
-        </div>
-        <div className="bg-white dark:bg-gray-900 max-h-80 overflow-auto">
-          {list.map((c, i) => (
-            <button
-              key={c.id}
-              aria-selected={i === index}
-              onClick={() => {
-                c.action();
-                onClose();
-              }}
-              className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800 ${
-                i === index ? 'bg-gray-100 dark:bg-gray-800' : ''
-              }`}
-            >
-              {c.label}
-            </button>
-          ))}
-          {!list.length && (
-            <div className="px-4 py-6 text-sm text-gray-500 dark:text-gray-400">No results</div>
-          )}
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="command-title">
+        <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
+        <div className="relative max-w-xl mx-auto mt-24 rounded-xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-gray-900 p-3 border-b border-gray-200 dark:border-gray-700">
+            <h3 id="command-title" className="sr-only">{intl.formatMessage({id:'command.title'})}</h3>
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={e=>setQuery(e.target.value)}
+              placeholder={intl.formatMessage({id:'command.placeholder'})}
+              aria-label={intl.formatMessage({id:'command.placeholder'})}
+              className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">{intl.formatMessage({id:'command.esc'})}</div>
+          </div>
+          <div className="bg-white dark:bg-gray-900 max-h-80 overflow-auto" role="listbox">
+            {list.map((c, i) => (
+              <button
+                key={c.id}
+                ref={el => itemsRef.current[i] = el}
+                role="option"
+                tabIndex={-1}
+                aria-selected={i === index}
+                onClick={() => {
+                  c.action();
+                  onClose();
+                }}
+                className={`w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-gray-100 dark:border-gray-800 ${
+                  i === index ? 'bg-gray-100 dark:bg-gray-800' : ''
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+            {!list.length && (
+              <div className="px-4 py-6 text-sm text-gray-500 dark:text-gray-400">{intl.formatMessage({id:'command.noResults'})}</div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
   );
 }

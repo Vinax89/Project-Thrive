@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { useIntl } from 'react-intl';
 
 export default function Modal({
   open,
@@ -12,6 +13,7 @@ export default function Modal({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const intl = useIntl();
 
   useEffect(() => {
     if (!open) return;
@@ -31,11 +33,11 @@ export default function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
       <div ref={ref} className="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-auto border border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h3 id="modal-title" className="text-lg font-semibold">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" aria-label="Close">✕</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" aria-label={intl.formatMessage({id:'close'})}>✕</button>
         </div>
         <div className="p-6">{children}</div>
       </div>
