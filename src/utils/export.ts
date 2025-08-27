@@ -42,18 +42,42 @@ export function exportICS(filename: string, bnpl: BNPLPlan[], obligations: Oblig
       'Z'
     );
   };
+  const fmtDate = (d: Date) =>
+    d.getUTCFullYear().toString() + pad(d.getUTCMonth() + 1) + pad(d.getUTCDate());
   const events: string[] = [];
   bnpl.forEach((plan) => {
     plan.dueDates.forEach((date, i) => {
+      const startDate = new Date(date);
+      const endDate = new Date(startDate);
+      endDate.setUTCDate(startDate.getUTCDate() + 1);
+      const endStr = fmtDate(endDate);
       events.push(
-        ['BEGIN:VEVENT', `UID:bnpl-${plan.id}-${i}@chatpay`, `SUMMARY:${plan.description} payment`, `DTSTART:${fmt(date)}`, 'END:VEVENT'].join('\n')
+        [
+          'BEGIN:VEVENT',
+          `UID:bnpl-${plan.id}-${i}@chatpay`,
+          `SUMMARY:${plan.description} payment`,
+          `DTSTART:${fmt(date)}`,
+          `DTEND:${endStr}`,
+          'END:VEVENT',
+        ].join('\n')
       );
     });
   });
   obligations.forEach((o) => {
     if (o.dueDate) {
+      const startDate = new Date(o.dueDate);
+      const endDate = new Date(startDate);
+      endDate.setUTCDate(startDate.getUTCDate() + 1);
+      const endStr = fmtDate(endDate);
       events.push(
-        ['BEGIN:VEVENT', `UID:obl-${o.id}@chatpay`, `SUMMARY:${o.name}`, `DTSTART:${fmt(o.dueDate)}`, 'END:VEVENT'].join('\n')
+        [
+          'BEGIN:VEVENT',
+          `UID:obl-${o.id}@chatpay`,
+          `SUMMARY:${o.name}`,
+          `DTSTART:${fmt(o.dueDate)}`,
+          `DTEND:${endStr}`,
+          'END:VEVENT',
+        ].join('\n')
       );
     }
   });
