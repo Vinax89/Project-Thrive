@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
-import type { Debt } from '../../types';
+import type { Debt, BNPLPlan } from '../../types';
 
 type ImportPayload = {
   budgets?: any[];
   debts?: Debt[];
-  bnpl?: any[];
+  bnplPlans?: BNPLPlan[];
   recurring?: any[];
   goals?: any[];
 };
 
 function validate(p: any): p is ImportPayload {
   if (typeof p !== 'object' || p === null) return false;
-  const allowed = ['budgets','debts','bnpl','recurring','goals'];
+  const allowed = ['budgets','debts','bnplPlans','recurring','goals'];
   for (const k of Object.keys(p)) if (!allowed.includes(k)) return false;
   return true;
 }
@@ -39,7 +39,7 @@ export default function ImportDataModal({
     setError(null);
     try {
       const json = JSON.parse(text);
-      if (!validate(json)) { setError('Invalid schema. Expect a JSON object with keys: budgets, debts, bnpl, recurring, goals'); return; }
+      if (!validate(json)) { setError('Invalid schema. Expect a JSON object with keys: budgets, debts, bnplPlans, recurring, goals'); return; }
       onImport(json);
       onClose();
     } catch (e: any) {
