@@ -1,0 +1,14 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`estimateCaliforniaTax > calculates tax at bracket boundaries 1`] = `
+[
+  104.12,
+  389.56,
+  960.56,
+  1867.94,
+  3009.38,
+  29122.57,
+  36314.44,
+  67876.47,
+]
+`;

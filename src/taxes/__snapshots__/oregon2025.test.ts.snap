@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`estimateOregonTax > calculates tax at bracket boundaries 1`] = `
+[
+  209,
+  654.5,
+  10629.5,
+]
+`;
