@@ -1,28 +1,8 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
-import type { ImportPayload } from '../../types';
-export type { ImportPayload } from '../../types';
-
-const VALID_KEYS = ['budgets', 'debts', 'bnpl', 'recurring', 'goals'] as const;
-type ValidKey = (typeof VALID_KEYS)[number];
-
-function validate(json: any): json is ImportPayload {
-  if (typeof json !== 'object' || json === null) return false;
-  const keys = Object.keys(json);
-  if (!VALID_KEYS.every((k) => k in json)) return false;
-  if (keys.some((k) => !VALID_KEYS.includes(k as ValidKey))) return false;
-  if (
-    !Array.isArray(json.budgets) ||
-    !Array.isArray(json.debts) ||
-    !Array.isArray(json.bnpl) ||
-    !Array.isArray(json.recurring) ||
-    !Array.isArray(json.goals)
-  ) {
-    return false;
-  }
-  return true;
-}
+import { importSchema, type ImportPayload } from '../../schema/import';
+export type { ImportPayload } from '../../schema/import';
 
 export default function ImportDataModal({
   open, onClose, onImport
@@ -45,11 +25,12 @@ export default function ImportDataModal({
     setError(null);
     try {
       const json = JSON.parse(text);
-      if (!validate(json)) {
-        setError('Invalid schema. Expect a JSON object with keys: budgets, debts, bnpl, recurring, goals');
+      const result = importSchema.safeParse(json);
+      if (!result.success) {
+        setError(result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '));
         return;
       }
-      onImport(json);
+      onImport(result.data);
       onClose();
     } catch (e) {
       setError('Invalid JSON: ' + (e instanceof Error ? e.message : String(e)));
