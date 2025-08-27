@@ -52,15 +52,46 @@ class Store {
     const paths = getDataPaths(this.dataDir);
     this.paths = paths;
     this.db = DEFAULT_STRUCTURE();
+    // Disk write helpers
+    this._writeToDisk = atomicWrite;
+    this._writeQueue = Promise.resolve();
+    this._pending = null;
+    this._timer = null;
+    this._debounceMs = opts.debounceMs || 500;
   }
 
   async load() {
     this.db = await loadDB(this.dataDir);
   }
 
-  async save() {
-    const { dbFile, tmpFile } = this.paths;
-    await atomicWrite(dbFile, tmpFile, this.db);
+  save() {
+    // If a save is already scheduled or in progress, reuse its promise
+    if (!this._pending) {
+      this._pending = new Promise((resolve, reject) => {
+        this._resolvePending = resolve;
+        this._rejectPending = reject;
+      });
+    }
+
+    // Reset debounce timer
+    if (this._timer) clearTimeout(this._timer);
+    this._timer = setTimeout(() => {
+      this._timer = null;
+      const { dbFile, tmpFile } = this.paths;
+      const run = this._writeQueue.then(() =>
+        this._writeToDisk(dbFile, tmpFile, this.db)
+      );
+      this._writeQueue = run.catch(() => {});
+      run
+        .then(this._resolvePending, this._rejectPending)
+        .finally(() => {
+          this._pending = null;
+          this._resolvePending = null;
+          this._rejectPending = null;
+        });
+    }, this._debounceMs);
+
+    return this._pending;
   }
 
   ensureUser(email) {

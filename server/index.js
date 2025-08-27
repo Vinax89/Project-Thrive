@@ -88,7 +88,7 @@ function listRouter(key) {
     const item = { id: req.body.id || String(Date.now()), ...req.body };
     user[key] = user[key] || [];
     user[key].push(item);
-    await store.save();
+    store.save();
     res.status(201).json(item);
   });
   // Update
@@ -99,7 +99,7 @@ function listRouter(key) {
     const idx = arr.findIndex(x => String(x.id) === String(id));
     if (idx === -1) return res.status(404).json({ error: 'not found' });
     arr[idx] = { ...arr[idx], ...req.body, id };
-    await store.save();
+    store.save();
     res.json(arr[idx]);
   });
   // Delete
@@ -109,7 +109,7 @@ function listRouter(key) {
     const arr = user[key] || [];
     const next = arr.filter(x => String(x.id) !== String(id));
     user[key] = next;
-    await store.save();
+    store.save();
     res.status(204).end();
   });
   return router;
