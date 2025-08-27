@@ -1,91 +1,127 @@
-import express from 'express';
-import cors from 'cors';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
+/* eslint-disable no-console */
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const bodyParser = require('body-parser');
+const { Store } = require('./persistence');
+const { makeToken, verifyToken } = require('./utils/jwt');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
+const NODE_ENV = process.env.NODE_ENV || 'development';
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+const DATA_DIR = process.env.DATA_DIR || './data';
+const ALLOWED_ORIGIN = (process.env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
 
-const users = new Map(); // email -> {passwordHash}
-const dataStore = new Map(); // email -> { budgets:[], debts:[], goals:[], obligations:[], bnpl:[] }
+const store = new Store({ dataDir: DATA_DIR });
 
-function initUserData(email){
-  if(!dataStore.has(email)){
-    dataStore.set(email, { budgets: [], debts: [], goals: [], obligations: [], bnpl: [] });
-  }
-  return dataStore.get(email);
+// CORS
+app.use(cors({
+  origin: function(origin, cb) {
+    // Allow no-origin (curl, mobile apps) and same-origin
+    if (!origin) return cb(null, true);
+    if (NODE_ENV !== 'production') return cb(null, true);
+    // In production, enforce allowlist
+    if (ALLOWED_ORIGIN.includes(origin)) return cb(null, true);
+    return cb(new Error('CORS: origin not allowed'), false);
+  },
+  credentials: true
+}));
+
+app.use(bodyParser.json({ limit: '1mb' }));
+
+// Auth middleware
+function auth(req, res, next) {
+  const header = req.headers['authorization'] || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Missing token' });
+  const decoded = verifyToken(token, JWT_SECRET);
+  if (!decoded || !decoded.email) return res.status(401).json({ error: 'Invalid token' });
+  req.user = { email: decoded.email };
+  next();
 }
 
-function authMiddleware(req, res, next){
-  const auth = req.headers['authorization'];
-  if(!auth) return res.status(401).json({ message: 'Missing token' });
-  const token = auth.split(' ')[1];
-  try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    req.user = payload;
-    next();
-  } catch (err){
-    res.status(401).json({ message: 'Invalid token' });
-  }
-}
-
-app.post('/api/auth/register', async (req,res)=>{
-  const { email, password } = req.body;
-  if(users.has(email)) return res.status(400).json({ message: 'User exists' });
-  const hash = bcrypt.hashSync(password, 8);
-  users.set(email, { password: hash });
-  initUserData(email);
-  const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
-  res.json({ token });
+// Health check
+app.get('/api/healthz', (req, res) => {
+  const version = process.env.npm_package_version || '0.0.0';
+  res.json({
+    status: 'ok',
+    version,
+    node: process.version,
+    uptime: process.uptime(),
+    dataDir: path.resolve(DATA_DIR),
+    usersCount: Object.keys(store.db.users || {}).length
+  });
 });
 
-app.post('/api/auth/login', (req,res)=>{
-  const { email, password } = req.body;
-  const user = users.get(email);
-  if(!user) return res.status(400).json({ message: 'Invalid credentials' });
-  const ok = bcrypt.compareSync(password, user.password);
-  if(!ok) return res.status(400).json({ message: 'Invalid credentials' });
-  const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
-  res.json({ token });
+// Auth
+app.post('/api/auth/register', (req, res) => {
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ error: 'email required' });
+  // No password for this demo; in real life, hash passwords!
+  store.ensureUser(email);
+  store.save();
+  const token = makeToken({ email }, JWT_SECRET);
+  res.json({ token, email });
 });
 
-function crudRoutes(path, key){
-  app.get(`/api/${path}`, authMiddleware, (req,res)=>{
-    const store = initUserData(req.user.email);
-    res.json(store[key]);
+app.post('/api/auth/login', (req, res) => {
+  const { email } = req.body || {};
+  if (!email) return res.status(400).json({ error: 'email required' });
+  // Accept any email that exists (or create it for demo)
+  store.ensureUser(email);
+  const token = makeToken({ email }, JWT_SECRET);
+  res.json({ token, email });
+});
+
+// Generic CRUD factory for lists
+function listRouter(key) {
+  const router = express.Router();
+  // Read all
+  router.get('/', auth, (req, res) => {
+    const user = store.getUser(req.user.email);
+    res.json(user[key] || []);
   });
-  app.post(`/api/${path}`, authMiddleware, (req,res)=>{
-    const store = initUserData(req.user.email);
-    const item = req.body;
-    store[key].push(item);
-    res.json(item);
+  // Create
+  router.post('/', auth, (req, res) => {
+    const user = store.getUser(req.user.email);
+    const item = { id: req.body.id || String(Date.now()), ...req.body };
+    user[key] = user[key] || [];
+    user[key].push(item);
+    store.save();
+    res.status(201).json(item);
   });
-  app.put(`/api/${path}/:id`, authMiddleware, (req,res)=>{
-    const store = initUserData(req.user.email);
-    const idx = store[key].findIndex(x=>x.id===req.params.id);
-    if(idx===-1) return res.status(404).json({ message: 'Not found' });
-    store[key][idx] = req.body;
-    res.json(store[key][idx]);
+  // Update
+  router.put('/:id', auth, (req, res) => {
+    const user = store.getUser(req.user.email);
+    const id = req.params.id;
+    const arr = user[key] || [];
+    const idx = arr.findIndex(x => String(x.id) === String(id));
+    if (idx === -1) return res.status(404).json({ error: 'not found' });
+    arr[idx] = { ...arr[idx], ...req.body, id };
+    store.save();
+    res.json(arr[idx]);
   });
-  app.delete(`/api/${path}/:id`, authMiddleware, (req,res)=>{
-    const store = initUserData(req.user.email);
-    const idx = store[key].findIndex(x=>x.id===req.params.id);
-    if(idx===-1) return res.status(404).json({ message: 'Not found' });
-    const [removed] = store[key].splice(idx,1);
-    res.json(removed);
+  // Delete
+  router.delete('/:id', auth, (req, res) => {
+    const user = store.getUser(req.user.email);
+    const id = req.params.id;
+    const arr = user[key] || [];
+    const next = arr.filter(x => String(x.id) !== String(id));
+    user[key] = next;
+    store.save();
+    res.status(204).end();
   });
+  return router;
 }
 
-crudRoutes('budgets','budgets');
-crudRoutes('debts','debts');
-crudRoutes('goals','goals');
-crudRoutes('obligations','obligations');
-crudRoutes('bnpl','bnpl');
+app.use('/api/budgets', listRouter('budgets'));
+app.use('/api/debts', listRouter('debts'));
+app.use('/api/goals', listRouter('goals'));
+app.use('/api/obligations', listRouter('obligations'));
+app.use('/api/bnpl', listRouter('bnpl'));
 
-app.listen(PORT, ()=>{
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(PORT, () => {
+  console.log(`[server] listening on http://localhost:${PORT} (${NODE_ENV})`);
 });
