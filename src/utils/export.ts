@@ -46,18 +46,18 @@ export function exportICS(filename: string, bnpl: BNPLPlan[], obligations: Oblig
   bnpl.forEach((plan) => {
     plan.dueDates.forEach((date, i) => {
       events.push(
-        ['BEGIN:VEVENT', `UID:bnpl-${plan.id}-${i}@chatpay`, `SUMMARY:${plan.description} payment`, `DTSTART:${fmt(date)}`, 'END:VEVENT'].join('\n')
+        ['BEGIN:VEVENT', `UID:bnpl-${plan.id}-${i}@chatpay`, `SUMMARY:${plan.description} payment`, `DTSTART:${fmt(date)}`, 'END:VEVENT'].join('\r\n')
       );
     });
   });
   obligations.forEach((o) => {
     if (o.dueDate) {
       events.push(
-        ['BEGIN:VEVENT', `UID:obl-${o.id}@chatpay`, `SUMMARY:${o.name}`, `DTSTART:${fmt(o.dueDate)}`, 'END:VEVENT'].join('\n')
+        ['BEGIN:VEVENT', `UID:obl-${o.id}@chatpay`, `SUMMARY:${o.name}`, `DTSTART:${fmt(o.dueDate)}`, 'END:VEVENT'].join('\r\n')
       );
     }
   });
-  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', ...events, 'END:VCALENDAR'].join('\n');
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', ...events, 'END:VCALENDAR'].join('\r\n') + '\r\n';
   const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
   triggerDownload(filename, blob);
 }
