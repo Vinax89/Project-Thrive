@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import Button from './components/Button';
 import ThemeToggle from './components/ThemeToggle';
 import CommandPalette from './components/CommandPalette';
@@ -85,6 +85,18 @@ export default function App(){
     ['shift+g', ()=> setTab('dashboard')],
   ]);
 
+  const handleAddBudget = useCallback((b: Budget) => {
+    setBudgets(prev => [...prev, b]);
+  }, []);
+
+  const handleUpdateBudget = useCallback((b: Budget) => {
+    setBudgets(prev => prev.map(x => x.id === b.id ? b : x));
+  }, []);
+
+  const handleDeleteBudget = useCallback((id: string) => {
+    setBudgets(prev => prev.filter(x => x.id !== id));
+  }, []);
+
   function handleExport(kind: 'json'|'csv'|'pdf') {
     const payload = { budgets, recurring, goals, debts, bnpl: SEEDED.bnpl };
     if (kind === 'json') exportJSON('chatpay-data.json', payload);
@@ -166,9 +178,9 @@ export default function App(){
         {tab === 'budgets' && (
           <BudgetTracker
             budgets={budgets}
-            onAdd={b=>setBudgets(prev=>[...prev,b])}
-            onUpdate={b=>setBudgets(prev=>prev.map(x=>x.id===b.id?b:x))}
-            onDelete={id=>setBudgets(prev=>prev.filter(x=>x.id!==id))}
+            onAdd={handleAddBudget}
+            onUpdate={handleUpdateBudget}
+            onDelete={handleDeleteBudget}
           />
         )}
 
