@@ -2,7 +2,7 @@ import type { Budget, BNPLPlan, RecurringTransaction, Goal, Debt } from '../type
 
 export const SEEDED: {
   debts: Debt[];
-  bnpl: BNPLPlan[];
+  bnplPlans: BNPLPlan[];
   budgets: Budget[];
   recurring: RecurringTransaction[];
   goals: Goal[];
@@ -21,7 +21,7 @@ export const SEEDED: {
     {"id":"affirm","name":"Affirm Loan","balance":12000,"apr":9.99,"minPayment":350},
     {"id":"auto-loan","name":"Rogue CU Auto Loan","balance":35975.40,"apr":9.99,"minPayment":780}
   ],
-  bnpl: [
+  bnplPlans: [
     {"id":"bnpl-pp","provider":"PayPal","description":"PayPal Pay Later bundles","total":1000.46,"remaining":820.46,"dueDates":["2025-09-15","2025-10-15","2025-11-15"]},
     {"id":"bnpl-klarna","provider":"Klarna","description":"Klarna purchases","total":1161.84,"remaining":840.00,"dueDates":["2025-09-05","2025-09-19","2025-10-03","2025-10-17"]},
     {"id":"bnpl-affirm","provider":"Affirm","description":"Affirm 24-month","total":12000,"remaining":9800,"dueDates":["2025-09-12","2025-10-12","2025-11-12"]}
