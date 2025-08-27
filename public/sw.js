@@ -1,10 +1,18 @@
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      await self.clients.claim();
+      await showDueNotifications();
+      await registerSync();
+    })()
+  );
 });
 
 const DB_NAME = 'notification-db';
 const STORE_NAME = 'notifications';
+const SYNC_TAG = 'notification-sync';
+const SYNC_INTERVAL = 60 * 60 * 1000;
 
 function openDb() {
   return new Promise((resolve, reject) => {
@@ -28,6 +36,21 @@ async function addNotification(data) {
     tx.onerror = () => reject(tx.error);
     tx.objectStore(STORE_NAME).add(data);
   });
+}
+
+async function registerSync() {
+  if ('periodicSync' in self.registration) {
+    const tags = await self.registration.periodicSync.getTags();
+    if (!tags.includes(SYNC_TAG)) {
+      try {
+        await self.registration.periodicSync.register(SYNC_TAG, {
+          minInterval: SYNC_INTERVAL
+        });
+      } catch {
+        /* periodic sync may be unavailable */
+      }
+    }
+  }
 }
 
 async function getDueNotifications() {
@@ -56,12 +79,17 @@ async function showDueNotifications() {
 
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'schedule') {
-    event.waitUntil(addNotification(event.data.payload));
+    event.waitUntil(
+      (async () => {
+        await addNotification(event.data.payload);
+        await registerSync();
+      })()
+    );
   }
 });
 
 self.addEventListener('periodicsync', (event) => {
-  if (event.tag === 'notification-sync') {
+  if (event.tag === SYNC_TAG) {
     event.waitUntil(showDueNotifications());
   }
 });
