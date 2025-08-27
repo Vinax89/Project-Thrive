@@ -47,6 +47,18 @@ npm run lint
 npm run format
 ```
 
+## Progressive Web App
+
+The application supports offline usage and installation as a PWA.
+
+### Installing
+
+1. Run the app locally with `npm run dev` or open the deployed site.
+2. In supported browsers, look for the install prompt or the "+" icon in the address bar.
+3. On mobile, use the browser menu and choose "Add to Home Screen".
+
+After installation, the app can be launched from your home screen or apps menu and will work offline for previously visited pages.
+
 ## Project Structure
 
 ```

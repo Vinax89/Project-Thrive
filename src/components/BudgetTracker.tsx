@@ -25,7 +25,7 @@ function BudgetTracker({ budgets, onAdd, onUpdate, onDelete }:{
         <h3 className="text-lg font-semibold">Budgets</h3>
         <Button variant="secondary" onClick={()=>{ setForm({ id:safeId(), category:'New', allocated:0, spent:0 }); setCreating(true); }}>+ Add Budget</Button>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {budgets.map(b => {
           const pct = b.allocated>0 ? Math.min(100, Math.round((b.spent/b.allocated)*100)) : 0;
           const over = b.spent > b.allocated;
@@ -37,8 +37,8 @@ function BudgetTracker({ budgets, onAdd, onUpdate, onDelete }:{
                   <div className="text-sm text-gray-500 dark:text-gray-400">${b.spent.toFixed(2)} / ${b.allocated.toFixed(2)}</div>
                 </div>
                 <div className="flex gap-2">
-                  <button className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700" onClick={()=>setEditing(b)}>Edit</button>
-                  <button className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700" onClick={()=>onDelete(b.id)}>Delete</button>
+                  <Button variant="secondary" onClick={()=>setEditing(b)}>Edit</Button>
+                  <Button variant="danger" onClick={()=>onDelete(b.id)}>Delete</Button>
                 </div>
               </div>
               <div className="mt-3 w-full bg-gray-100 dark:bg-gray-700 rounded h-2 overflow-hidden">
@@ -60,7 +60,7 @@ function BudgetTracker({ budgets, onAdd, onUpdate, onDelete }:{
       </div>
 
       <Modal open={creating} onClose={()=>setCreating(false)} title="Add Budget">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input label="Category" value={form.category} onChange={e=>setForm({...form, category: e.target.value})} />
           <Input label="Allocated" type="number" value={form.allocated} onChange={e=>setForm({...form, allocated: parseFloat(e.target.value)||0})} />
           <Input label="Spent" type="number" value={form.spent} onChange={e=>setForm({...form, spent: parseFloat(e.target.value)||0})} />
@@ -73,7 +73,7 @@ function BudgetTracker({ budgets, onAdd, onUpdate, onDelete }:{
 
       <Modal open={!!editing} onClose={()=>setEditing(null)} title="Edit Budget">
         {editing && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input label="Category" value={editing.category} onChange={e=>setEditing({...editing, category: e.target.value})} />
             <Input label="Allocated" type="number" value={editing.allocated} onChange={e=>setEditing({...editing, allocated: parseFloat(e.target.value)||0})} />
             <Input label="Spent" type="number" value={editing.spent} onChange={e=>setEditing({...editing, spent: parseFloat(e.target.value)||0})} />
