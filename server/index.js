@@ -2,7 +2,6 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const bodyParser = require('body-parser');
 const { Store } = require('./persistence');
 const { makeToken, verifyToken } = require('./utils/jwt');
 
@@ -29,7 +28,7 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(bodyParser.json({ limit: '1mb' }));
+app.use(express.json({ limit: '1mb' }));
 
 // Auth middleware
 function auth(req, res, next) {
