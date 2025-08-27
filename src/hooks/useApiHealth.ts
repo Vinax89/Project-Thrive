@@ -14,6 +14,7 @@ export function useApiHealth(apiBase?: string, intervalMs = 15000) {
   useEffect(() => {
     let timer: any;
     const url = (apiBase || import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
     async function ping() {
       if (!url) {
         setHealth({ status: 'down', error: 'VITE_API_URL not set' });
@@ -28,9 +29,34 @@ export function useApiHealth(apiBase?: string, intervalMs = 15000) {
         setHealth({ status: 'down', error: e?.message || 'fetch failed' });
       }
     }
-    ping();
-    timer = setInterval(ping, intervalMs);
-    return () => clearInterval(timer);
+
+    const start = () => {
+      if (timer || document.hidden) return;
+      ping();
+      timer = setInterval(ping, intervalMs);
+    };
+
+    const stop = () => {
+      if (timer) {
+        clearInterval(timer);
+        timer = undefined;
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        start();
+      }
+    };
+
+    start();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [apiBase, intervalMs]);
 
   return health;
