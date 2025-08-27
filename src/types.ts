@@ -64,3 +64,11 @@ export interface CashFlowProjectionPoint {
   label: string;
   endingBalance: number;
 }
+
+export interface ImportPayload {
+  budgets?: any[];
+  debts?: Debt[];
+  bnpl?: any[];
+  recurring?: any[];
+  goals?: any[];
+}

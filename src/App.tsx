@@ -23,6 +23,7 @@ import SpendingHeatmap from './components/reports/SpendingHeatmap';
 import GoalWaterfall from './components/reports/GoalWaterfall';
 import SankeyFlow from './components/reports/SankeyFlow';
 import { Budget, Goal, RecurringTransaction, Obligation, Debt } from './types';
+import type { ImportPayload } from './types';
 
 type Tab = 'dashboard' | 'budgets' | 'projection' | 'reports';
 
@@ -121,7 +122,7 @@ export default function App(){
     );
   }
 
-  function handleImport(payload: any) {
+  function handleImport(payload: ImportPayload) {
     try {
       if (payload.budgets) setBudgets(payload.budgets);
       if (payload.debts) setDebts(payload.debts);

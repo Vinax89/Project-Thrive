@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
-import type { Debt } from '../../types';
-
-type ImportPayload = {
-  budgets?: any[];
-  debts?: Debt[];
-  bnpl?: any[];
-  recurring?: any[];
-  goals?: any[];
-};
+import type { Debt, ImportPayload } from '../../types';
+export type { ImportPayload } from '../../types';
 
 function validate(p: any): p is ImportPayload {
   if (typeof p !== 'object' || p === null) return false;
