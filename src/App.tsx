@@ -17,7 +17,7 @@ import CalculatorModal from './components/modals/CalculatorModal';
 import { payoff } from './logic/debt';
 import { evaluateBadges } from './logic/badges';
 import { SEEDED } from './utils/constants';
-import { exportJSON, exportCSV, exportPDF, exportCSVBudgets } from './utils/export';
+import { exportJSON, exportPDF, exportCSVBudgets } from './utils/export';
 import toast from 'react-hot-toast';
 import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan, Transaction } from './types';
 
@@ -40,7 +40,7 @@ export default function App(){
   const { list: goals, create: addGoalApi, update: updateGoalApi, remove: deleteGoalApi } = useRemoteList<Goal>('goals', token);
   const { list: debts, create: addDebtApi, update: updateDebtApi, remove: deleteDebtApi } = useRemoteList<Debt>('debts', token);
   const { list: obligations, create: addObligationApi, update: updateObligationApi, remove: deleteObligationApi } = useRemoteList<Obligation>('obligations', token);
-  const { list: bnpl, create: addBnplApi, update: updateBnplApi, remove: deleteBnplApi } = useRemoteList<BNPLPlan>('bnpl', token);
+  const { list: bnpl, create: addBnplApi } = useRemoteList<BNPLPlan>('bnpl', token);
   const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -232,7 +232,8 @@ export default function App(){
       if (payload.transactions) handleTransactions(payload.transactions);
       toast.success('Import complete');
     } catch (e) {
-      toast.error('Import failed: ' + (e as any)?.message);
+      const message = e instanceof Error ? e.message : String(e);
+      toast.error('Import failed: ' + message);
     }
   }
 
