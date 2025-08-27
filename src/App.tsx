@@ -16,7 +16,7 @@ import CalculatorModal from './components/modals/CalculatorModal';
 import { payoff } from './logic/debt';
 import { evaluateBadges } from './logic/badges';
 import { SEEDED } from './utils/constants';
-import { exportJSON, exportCSV, exportPDF, exportCSVBudgets } from './utils/export';
+import { exportJSON, exportPDF, exportCSVBudgets } from './utils/export';
 import toast from 'react-hot-toast';
 import DebtVelocityChart from './components/reports/DebtVelocityChart';
 import SpendingHeatmap from './components/reports/SpendingHeatmap';
