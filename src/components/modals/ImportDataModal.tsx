@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
+import type { Debt } from '../../types';
 
 type ImportPayload = {
   budgets?: any[];
-  debts?: any[];
+  debts?: Debt[];
   bnpl?: any[];
   recurring?: any[];
   goals?: any[];

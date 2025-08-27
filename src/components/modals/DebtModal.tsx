@@ -2,14 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Modal from '../Modal';
 import Input from '../Input';
 import Button from '../Button';
-
-export type Debt = {
-  id: string;
-  name: string;
-  balance: number;
-  apr: number;
-  minPayment: number;
-};
+import type { Debt } from '../../types';
 
 const safeId = () => (crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2));
 
