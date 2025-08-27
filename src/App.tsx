@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useMemo, useState } from 'react';
 import Button from './components/Button';
 import ThemeToggle from './components/ThemeToggle';
 import CommandPalette from './components/CommandPalette';
@@ -18,11 +18,12 @@ import { evaluateBadges } from './logic/badges';
 import { SEEDED } from './utils/constants';
 import { exportJSON, exportCSV, exportPDF, exportCSVBudgets } from './utils/export';
 import toast from 'react-hot-toast';
-import DebtVelocityChart from './components/reports/DebtVelocityChart';
-import SpendingHeatmap from './components/reports/SpendingHeatmap';
-import GoalWaterfall from './components/reports/GoalWaterfall';
-import SankeyFlow from './components/reports/SankeyFlow';
 import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan } from './types';
+
+const DebtVelocityChart = React.lazy(() => import('./components/reports/DebtVelocityChart'));
+const SpendingHeatmap = React.lazy(() => import('./components/reports/SpendingHeatmap'));
+const GoalWaterfall = React.lazy(() => import('./components/reports/GoalWaterfall'));
+const SankeyFlow = React.lazy(() => import('./components/reports/SankeyFlow'));
 
 type Tab = 'dashboard' | 'budgets' | 'projection' | 'reports';
 
@@ -201,24 +202,26 @@ export default function App(){
         )}
 
         {tab === 'reports' && (
-          <div className="space-y-6">
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="font-medium mb-2">Debt Velocity</div>
-              <DebtVelocityChart plan={plan} />
+          <Suspense fallback={<div>Loading reports...</div>}>
+            <div className="space-y-6">
+              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="font-medium mb-2">Debt Velocity</div>
+                <DebtVelocityChart plan={plan} />
+              </div>
+              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="font-medium mb-2">Spending Heatmap</div>
+                <SpendingHeatmap matrix={heatmap} />
+              </div>
+              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="font-medium mb-2">Goal Waterfall</div>
+                <GoalWaterfall goals={goals.map(g=>({ name:g.name, current:g.current, target:g.target }))} />
+              </div>
+              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="font-medium mb-2">Income Flow</div>
+                <SankeyFlow flows={flows} />
+              </div>
             </div>
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="font-medium mb-2">Spending Heatmap</div>
-              <SpendingHeatmap matrix={heatmap} />
-            </div>
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="font-medium mb-2">Goal Waterfall</div>
-              <GoalWaterfall goals={goals.map(g=>({ name:g.name, current:g.current, target:g.target }))} />
-            </div>
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="font-medium mb-2">Income Flow</div>
-              <SankeyFlow flows={flows} />
-            </div>
-          </div>
+          </Suspense>
         )}
       </main>
 
