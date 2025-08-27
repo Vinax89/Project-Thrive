@@ -16,7 +16,12 @@ import CalculatorModal from './components/modals/CalculatorModal';
 import { payoff } from './logic/debt';
 import { evaluateBadges } from './logic/badges';
 import { SEEDED } from './utils/constants';
-import { exportJSON, exportPDF, exportCSVBudgets, exportICS } from './utils/export';
+import {
+  exportJSON,
+  exportPDF,
+  exportCSVBudgets,
+  exportICS,
+} from './utils/export';
 import toast from 'react-hot-toast';
 import { Budget, Goal, RecurringTransaction, Obligation, Debt, Transaction } from './types';
 import ApiOkPill from './components/system/ApiOkPill';
