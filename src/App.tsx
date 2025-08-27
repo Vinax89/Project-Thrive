@@ -11,7 +11,7 @@ import DebtScheduleViewer from './components/DebtScheduleViewer';
 import ManageDebtsModal from './components/modals/ManageDebtsModal';
 import ManageGoalsModal from './components/modals/ManageGoalsModal';
 import ManageObligationsModal from './components/modals/ManageObligationsModal';
-import ImportDataModal from './components/modals/ImportDataModal';
+import ImportDataModal, { ImportPayload } from './components/modals/ImportDataModal';
 import CalculatorModal from './components/modals/CalculatorModal';
 import { payoff } from './logic/debt';
 import { evaluateBadges } from './logic/badges';
@@ -22,7 +22,7 @@ import DebtVelocityChart from './components/reports/DebtVelocityChart';
 import SpendingHeatmap from './components/reports/SpendingHeatmap';
 import GoalWaterfall from './components/reports/GoalWaterfall';
 import SankeyFlow from './components/reports/SankeyFlow';
-import { Budget, Goal, RecurringTransaction, Obligation } from './types';
+import { Budget, Goal, RecurringTransaction, Obligation, Debt } from './types';
 
 type Tab = 'dashboard' | 'budgets' | 'projection' | 'reports';
 
@@ -30,10 +30,10 @@ export default function App(){
   const [tab, setTab] = useState<Tab>('dashboard');
   const [strategy, setStrategy] = useState<'avalanche'|'snowball'>('avalanche');
 
-  const [budgets, setBudgets] = useState<Budget[]>(() => SEEDED.budgets as Budget[]);
-  const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring as RecurringTransaction[]);
-  const [goals, setGoals] = useState<Goal[]>(() => SEEDED.goals as Goal[]);
-  const [debts, setDebts] = useState(() => SEEDED.debts.map(d => ({ ...d })));
+  const [budgets, setBudgets] = useState<Budget[]>(() => SEEDED.budgets);
+  const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring);
+  const [goals, setGoals] = useState<Goal[]>(() => SEEDED.goals);
+  const [debts, setDebts] = useState<Debt[]>(() => SEEDED.debts.map(d => ({ ...d })));
   const [obligations, setObligations] = useState<Obligation[]>([]);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -116,12 +116,12 @@ export default function App(){
       'Budgets: ' + budgets.length + '\n' +
       'Recurring: ' + recurring.length + '\n' +
       'Goals: ' + goals.length + '\n' +
-      'Debts: ' + (debts as any[]).length + '\n' +
-      'BNPL: ' + (SEEDED.bnpl as any[]).length + '\n'
+      'Debts: ' + debts.length + '\n' +
+      'BNPL: ' + SEEDED.bnpl.length + '\n'
     );
   }
 
-  function handleImport(payload: any) {
+  function handleImport(payload: ImportPayload) {
     try {
       if (payload.budgets) setBudgets(payload.budgets);
       if (payload.debts) setDebts(payload.debts);

@@ -1,19 +1,90 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
+import {
+  Budget,
+  Debt,
+  BNPLPlan,
+  RecurringTransaction,
+  Goal,
+} from '../../types';
 
-type ImportPayload = {
-  budgets?: any[];
-  debts?: any[];
-  bnpl?: any[];
-  recurring?: any[];
-  goals?: any[];
+export type ImportPayload = {
+  budgets?: Budget[];
+  debts?: Debt[];
+  bnpl?: BNPLPlan[];
+  recurring?: RecurringTransaction[];
+  goals?: Goal[];
 };
+
+function isBudget(b: any): b is Budget {
+  return (
+    typeof b === 'object' &&
+    b !== null &&
+    typeof b.id === 'string' &&
+    typeof b.category === 'string' &&
+    typeof b.allocated === 'number' &&
+    typeof b.spent === 'number'
+  );
+}
+
+function isDebt(d: any): d is Debt {
+  return (
+    typeof d === 'object' &&
+    d !== null &&
+    typeof d.id === 'string' &&
+    typeof d.name === 'string' &&
+    typeof d.balance === 'number' &&
+    typeof d.apr === 'number' &&
+    typeof d.minPayment === 'number'
+  );
+}
+
+function isBNPLPlan(p: any): p is BNPLPlan {
+  return (
+    typeof p === 'object' &&
+    p !== null &&
+    typeof p.id === 'string' &&
+    typeof p.provider === 'string' &&
+    typeof p.description === 'string' &&
+    typeof p.total === 'number' &&
+    typeof p.remaining === 'number' &&
+    Array.isArray(p.dueDates)
+  );
+}
+
+function isRecurring(r: any): r is RecurringTransaction {
+  return (
+    typeof r === 'object' &&
+    r !== null &&
+    typeof r.id === 'string' &&
+    typeof r.name === 'string' &&
+    typeof r.type === 'string' &&
+    typeof r.amount === 'number' &&
+    typeof r.cadence === 'string'
+  );
+}
+
+function isGoal(g: any): g is Goal {
+  return (
+    typeof g === 'object' &&
+    g !== null &&
+    typeof g.id === 'string' &&
+    typeof g.name === 'string' &&
+    typeof g.target === 'number' &&
+    typeof g.current === 'number'
+  );
+}
 
 function validate(p: any): p is ImportPayload {
   if (typeof p !== 'object' || p === null) return false;
-  const allowed = ['budgets','debts','bnpl','recurring','goals'];
+  const allowed = ['budgets', 'debts', 'bnpl', 'recurring', 'goals'];
   for (const k of Object.keys(p)) if (!allowed.includes(k)) return false;
+  if (p.budgets && (!Array.isArray(p.budgets) || !p.budgets.every(isBudget))) return false;
+  if (p.debts && (!Array.isArray(p.debts) || !p.debts.every(isDebt))) return false;
+  if (p.bnpl && (!Array.isArray(p.bnpl) || !p.bnpl.every(isBNPLPlan))) return false;
+  if (p.recurring && (!Array.isArray(p.recurring) || !p.recurring.every(isRecurring))) return false;
+  if (p.goals && (!Array.isArray(p.goals) || !p.goals.every(isGoal))) return false;
   return true;
 }
 
