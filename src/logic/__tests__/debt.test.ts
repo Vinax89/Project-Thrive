@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { performance } from 'perf_hooks';
 import { payoff } from '../debt';
 
 describe('payoff()', () => {
@@ -29,5 +30,20 @@ describe('payoff()', () => {
     );
     expect(result.months).toBe(0);
     expect(result.schedule[0].unlockedBadges?.[0]).toContain('Budget < sum(min payments)');
+  });
+
+  it('handles large debt sets efficiently', () => {
+    const debts = Array.from({ length: 300 }, (_, i) => ({
+      id: `d${i}`,
+      name: `D${i}`,
+      balance: 1000 + i,
+      apr: (i % 30) + 1,
+      minPayment: 5,
+    }));
+    const start = performance.now();
+    const res = payoff(debts, 10000, 'avalanche', 36);
+    const duration = performance.now() - start;
+    expect(res.months).toBeGreaterThan(0);
+    expect(duration).toBeLessThan(3000);
   });
 });
