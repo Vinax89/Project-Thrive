@@ -12,5 +12,5 @@ export default function Button({
     : variant === 'danger'
     ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
     : 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500';
-  return <button className={`${base} ${variantClass} ${className}`} {...props}>{children}</button>;
+  return <button type="button" className={`${base} ${variantClass} ${className}`} {...props}>{children}</button>;
 }

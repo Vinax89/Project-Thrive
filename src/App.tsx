@@ -13,12 +13,16 @@ import ManageGoalsModal from './components/modals/ManageGoalsModal';
 import ManageObligationsModal from './components/modals/ManageObligationsModal';
 import ImportDataModal, { ImportPayload } from './components/modals/ImportDataModal';
 import CalculatorModal from './components/modals/CalculatorModal';
+import SettingsModal from './components/SettingsModal';
 import { payoff } from './logic/debt';
 import { evaluateBadges } from './logic/badges';
 import { SEEDED } from './utils/constants';
 import { exportJSON, exportCSV, exportPDF, exportCSVBudgets } from './utils/export';
 import toast from 'react-hot-toast';
 import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan } from './types';
+import { useSettings } from './hooks/useSettings';
+import { formatCurrency } from './utils/format';
+import { useIntl } from 'react-intl';
 
 const DebtVelocityChart = React.lazy(() => import('./components/reports/DebtVelocityChart'));
 const SpendingHeatmap = React.lazy(() => import('./components/reports/SpendingHeatmap'));
@@ -27,7 +31,9 @@ const SankeyFlow = React.lazy(() => import('./components/reports/SankeyFlow'));
 
 type Tab = 'dashboard' | 'budgets' | 'projection' | 'reports';
 
-export default function App(){
+  export default function App(){
+    const { settings } = useSettings();
+    const intl = useIntl();
   const [tab, setTab] = useState<Tab>('dashboard');
   const [strategy, setStrategy] = useState<'avalanche'|'snowball'>('avalanche');
 
@@ -38,14 +44,15 @@ export default function App(){
   const [bnpl, setBnpl] = useState<BNPLPlan[]>(() => SEEDED.bnpl);
   const [obligations, setObligations] = useState<Obligation[]>([]);
 
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [showBNPL, setShowBNPL] = useState(false);
-  const [showShiftImpact, setShowShiftImpact] = useState(false);
-  const [showManageDebts, setShowManageDebts] = useState(false);
-  const [showManageGoals, setShowManageGoals] = useState(false);
-  const [showManageObligations, setShowManageObligations] = useState(false);
-  const [showImport, setShowImport] = useState(false);
-  const [showCalc, setShowCalc] = useState(false);
+    const [paletteOpen, setPaletteOpen] = useState(false);
+    const [showBNPL, setShowBNPL] = useState(false);
+    const [showShiftImpact, setShowShiftImpact] = useState(false);
+    const [showManageDebts, setShowManageDebts] = useState(false);
+    const [showManageGoals, setShowManageGoals] = useState(false);
+    const [showManageObligations, setShowManageObligations] = useState(false);
+    const [showImport, setShowImport] = useState(false);
+    const [showCalc, setShowCalc] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
 
   const monthlyDebtBudget = useMemo(()=> budgets.find(b=>b.category==='Debt')?.allocated ?? 1500, [budgets]);
 
@@ -65,19 +72,19 @@ export default function App(){
     );
   }, [budgets]);
 
-  const flows = useMemo(()=>{
-    const income = recurring.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
-    const essentials = budgets.filter(b=>['Housing','Car','Groceries','Power','Internet','Insurance'].includes(b.category)).reduce((s,b)=>s+b.spent,0);
-    const dining = budgets.find(b=>b.category==='Dining')?.spent ?? 0;
-    const debt = budgets.find(b=>b.category==='Debt')?.spent ?? 0;
-    const save = Math.max(0, income - (essentials+dining+debt));
-    return [
-      { source: 'Income', target: 'Essentials', amount: essentials },
-      { source: 'Income', target: 'Dining', amount: dining },
-      { source: 'Income', target: 'Debt', amount: debt },
-      { source: 'Income', target: 'Save/Goals', amount: save },
-    ];
-  }, [budgets, recurring]);
+    const flows = useMemo(()=>{
+      const income = recurring.filter(r=>r.type==='income').reduce((s,r)=>s+r.amount,0);
+      const essentials = budgets.filter(b=>['Housing','Car','Groceries','Power','Internet','Insurance'].includes(b.category)).reduce((s,b)=>s+b.spent,0);
+      const dining = budgets.find(b=>b.category==='Dining')?.spent ?? 0;
+      const debt = budgets.find(b=>b.category==='Debt')?.spent ?? 0;
+      const save = Math.max(0, income - (essentials+dining+debt));
+      return [
+        { source: 'Income', target: 'Essentials', amount: essentials },
+        { source: 'Income', target: 'Dining', amount: dining },
+        { source: 'Income', target: 'Debt', amount: debt },
+        { source: 'Income', target: 'Save/Goals', amount: save },
+      ];
+    }, [budgets, recurring]);
 
   const openPalette = useCallback(() => setPaletteOpen(true), []);
   const goBudgets = useCallback(() => setTab('budgets'), []);
@@ -142,42 +149,43 @@ export default function App(){
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src="/logo.svg" alt="logo" className="w-6 h-6" />
-            <div className="font-semibold">ChatPay v6.1 — Project Thrive</div>
+              <div className="font-semibold">ChatPay v6.1 — Project Thrive</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant={tab==='dashboard'?'primary':'secondary'} onClick={()=>setTab('dashboard')}>Dashboard</Button>
+              <Button variant={tab==='budgets'?'primary':'secondary'} onClick={()=>setTab('budgets')}>Budgets</Button>
+              <Button variant={tab==='projection'?'primary':'secondary'} onClick={()=>setTab('projection')}>Projection</Button>
+              <Button variant={tab==='reports'?'primary':'secondary'} onClick={()=>setTab('reports')}>Reports</Button>
+              <Button variant="secondary" onClick={()=>setShowManageDebts(true)}>Debts</Button>
+              <Button variant="secondary" onClick={()=>setShowManageGoals(true)}>Goals</Button>
+              <Button variant="secondary" onClick={()=>setShowManageObligations(true)}>Obligations</Button>
+              <Button variant="secondary" onClick={()=>setShowBNPL(true)}>BNPL</Button>
+              <Button variant="secondary" onClick={()=>setShowShiftImpact(true)}>Shift Impact</Button>
+              <Button variant="secondary" onClick={()=>setShowCalc(true)}>Calculator</Button>
+              <Button variant="secondary" onClick={()=>setShowImport(true)}>Import</Button>
+              <Button variant="secondary" onClick={()=>handleExport('json')}>Export JSON</Button>
+              <Button variant="secondary" onClick={()=>handleExport('csv')}>CSV</Button>
+              <Button variant="secondary" onClick={()=>handleExport('pdf')}>PDF</Button>
+              <Button variant="secondary" onClick={()=>setShowSettings(true)}>{intl.formatMessage({id:'settings.title'})}</Button>
+              <ThemeToggle />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant={tab==='dashboard'?'primary':'secondary'} onClick={()=>setTab('dashboard')}>Dashboard</Button>
-            <Button variant={tab==='budgets'?'primary':'secondary'} onClick={()=>setTab('budgets')}>Budgets</Button>
-            <Button variant={tab==='projection'?'primary':'secondary'} onClick={()=>setTab('projection')}>Projection</Button>
-            <Button variant={tab==='reports'?'primary':'secondary'} onClick={()=>setTab('reports')}>Reports</Button>
-            <Button variant="secondary" onClick={()=>setShowManageDebts(true)}>Debts</Button>
-            <Button variant="secondary" onClick={()=>setShowManageGoals(true)}>Goals</Button>
-            <Button variant="secondary" onClick={()=>setShowManageObligations(true)}>Obligations</Button>
-            <Button variant="secondary" onClick={()=>setShowBNPL(true)}>BNPL</Button>
-            <Button variant="secondary" onClick={()=>setShowShiftImpact(true)}>Shift Impact</Button>
-            <Button variant="secondary" onClick={()=>setShowCalc(true)}>Calculator</Button>
-            <Button variant="secondary" onClick={()=>setShowImport(true)}>Import</Button>
-            <Button variant="secondary" onClick={()=>handleExport('json')}>Export JSON</Button>
-            <Button variant="secondary" onClick={()=>handleExport('csv')}>CSV</Button>
-            <Button variant="secondary" onClick={()=>handleExport('pdf')}>PDF</Button>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+        </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         {tab === 'dashboard' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Months to Payoff (Budget {formatCurrency(monthlyDebtBudget, settings.language, settings.currency)})</div>
+                  <div className="text-2xl font-semibold">{plan.months}</div>
+                </div>
               <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Months to Payoff (Budget ${monthlyDebtBudget})</div>
-                <div className="text-2xl font-semibold">{plan.months}</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Total Interest</div>
+                  <div className="text-2xl font-semibold">{formatCurrency(plan.totalInterest, settings.language, settings.currency)}</div>
               </div>
               <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Total Interest</div>
-                <div className="text-2xl font-semibold">${plan.totalInterest.toFixed(2)}</div>
-              </div>
-              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <div className="text-sm text-gray-500 dark:text-gray-400">Strategy</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Strategy</div>
                 <div className="flex items-center gap-2">
                   <button className={`px-3 py-1 rounded ${strategy==='avalanche'?'bg-blue-600 text-white':'bg-gray-200 dark:bg-gray-700'}`} onClick={()=>setStrategy('avalanche')}>Avalanche</button>
                   <button className={`px-3 py-1 rounded ${strategy==='snowball'?'bg-blue-600 text-white':'bg-gray-200 dark:bg-gray-700'}`} onClick={()=>setStrategy('snowball')}>Snowball</button>
@@ -250,6 +258,7 @@ export default function App(){
       <ManageObligationsModal open={showManageObligations} onClose={()=>setShowManageObligations(false)} obligations={obligations} onChange={setObligations} />
       <ImportDataModal open={showImport} onClose={()=>setShowImport(false)} onImport={handleImport} />
       <CalculatorModal open={showCalc} onClose={()=>setShowCalc(false)} debts={debts} />
+      <SettingsModal open={showSettings} onClose={()=>setShowSettings(false)} />
     </div>
   );
 }
