@@ -16,9 +16,15 @@ export default function Modal({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', onKey);
+    }
     setTimeout(() => ref.current?.querySelector<HTMLElement>('button, [href], input, select, textarea')?.focus(), 0);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('keydown', onKey);
+      }
+    };
   }, [open, onClose]);
 
   if (!open) return null;
