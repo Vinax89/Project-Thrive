@@ -6,8 +6,11 @@ export default function useLocalList<T>(key: string, initial: T[]) {
     if (!raw) return initial;
     try {
       return JSON.parse(raw) as T[];
-    } catch (err) {
-      console.warn(`Failed to parse localStorage item "${key}":`, err);
+    } catch (error) {
+      console.warn(
+        `Failed to parse localStorage item "${key}". Removing corrupted data:`,
+        error,
+      );
       localStorage.removeItem(key);
       return initial;
     }
