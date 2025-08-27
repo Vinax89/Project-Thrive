@@ -1,91 +1,62 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
-import type {
-  ImportPayload,
-  Budget,
-  Debt,
-  BNPLPlan,
-  RecurringTransaction,
-  Goal,
-  Cadence,
-  TxnType
-} from '../../types';
+import { z } from 'zod';
+import type { ImportPayload } from '../../types';
 export type { ImportPayload } from '../../types';
 
-const CADENCES: Cadence[] = ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'];
-const TXN_TYPES: TxnType[] = ['income', 'expense'];
+const CADENCES = ['weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'] as const;
+const TXN_TYPES = ['income', 'expense'] as const;
 
-function isString(v: unknown): v is string {
-  return typeof v === 'string';
-}
+const BudgetSchema = z.object({
+  id: z.string(),
+  category: z.string(),
+  allocated: z.number(),
+  spent: z.number()
+});
 
-function isNumber(v: unknown): v is number {
-  return typeof v === 'number' && !Number.isNaN(v);
-}
+const DebtSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  balance: z.number(),
+  apr: z.number(),
+  minPayment: z.number()
+});
 
-function isBudget(item: any): item is Budget {
-  return (
-    isString(item?.id) &&
-    isString(item?.category) &&
-    isNumber(item?.allocated) &&
-    isNumber(item?.spent)
-  );
-}
+const BNPLPlanSchema = z.object({
+  id: z.string(),
+  provider: z.enum(['PayPal', 'Affirm', 'Klarna']),
+  description: z.string(),
+  total: z.number(),
+  remaining: z.number(),
+  dueDates: z.array(z.string()),
+  apr: z.number().optional()
+});
 
-function isDebt(item: any): item is Debt {
-  return (
-    isString(item?.id) &&
-    isString(item?.name) &&
-    isNumber(item?.balance) &&
-    isNumber(item?.apr) &&
-    isNumber(item?.minPayment)
-  );
-}
+const RecurringTransactionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(TXN_TYPES),
+  amount: z.number(),
+  cadence: z.enum(CADENCES)
+});
 
-function isBNPLPlan(item: any): item is BNPLPlan {
-  return (
-    isString(item?.id) &&
-    ['PayPal', 'Affirm', 'Klarna'].includes(item?.provider) &&
-    isString(item?.description) &&
-    isNumber(item?.total) &&
-    isNumber(item?.remaining) &&
-    Array.isArray(item?.dueDates) &&
-    item.dueDates.every(isString) &&
-    (item.apr === undefined || isNumber(item.apr))
-  );
-}
+const GoalSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  target: z.number(),
+  current: z.number(),
+  due: z.string().optional(),
+  priority: z.number().optional()
+});
 
-function isRecurringTransaction(item: any): item is RecurringTransaction {
-  return (
-    isString(item?.id) &&
-    isString(item?.name) &&
-    TXN_TYPES.includes(item?.type) &&
-    isNumber(item?.amount) &&
-    CADENCES.includes(item?.cadence)
-  );
-}
-
-function isGoal(item: any): item is Goal {
-  return (
-    isString(item?.id) &&
-    isString(item?.name) &&
-    isNumber(item?.target) &&
-    isNumber(item?.current) &&
-    (item.due === undefined || isString(item.due)) &&
-    (item.priority === undefined || isNumber(item.priority))
-  );
-}
-
-function validate(payload: any): payload is ImportPayload {
-  return (
-    Array.isArray(payload?.budgets) && payload.budgets.every(isBudget) &&
-    Array.isArray(payload?.debts) && payload.debts.every(isDebt) &&
-    Array.isArray(payload?.bnpl) && payload.bnpl.every(isBNPLPlan) &&
-    Array.isArray(payload?.recurring) && payload.recurring.every(isRecurringTransaction) &&
-    Array.isArray(payload?.goals) && payload.goals.every(isGoal)
-  );
-}
+const ImportPayloadSchema = z.object({
+  budgets: z.array(BudgetSchema),
+  debts: z.array(DebtSchema),
+  bnpl: z.array(BNPLPlanSchema),
+  recurring: z.array(RecurringTransactionSchema),
+  goals: z.array(GoalSchema)
+});
 
 export default function ImportDataModal({
   open, onClose, onImport
@@ -108,11 +79,12 @@ export default function ImportDataModal({
     setError(null);
     try {
       const json = JSON.parse(text);
-      if (!validate(json)) {
+      const result = ImportPayloadSchema.safeParse(json);
+      if (!result.success) {
         setError('Invalid schema. Expect a JSON object with keys: budgets, debts, bnpl, recurring, goals');
         return;
       }
-      onImport(json);
+      onImport(result.data as ImportPayload);
       onClose();
     } catch (e) {
       setError('Invalid JSON: ' + (e instanceof Error ? e.message : String(e)));
