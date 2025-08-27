@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { payoff } from './debt';
+import { payoff } from '../debt';
 
 describe('payoff()', () => {
   it('pays off two debts and decreases interest over time', () => {
