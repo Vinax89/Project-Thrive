@@ -68,7 +68,7 @@ export interface CashFlowProjectionPoint {
 export interface ImportPayload {
   budgets: Budget[];
   debts: Debt[];
-  bnplPlans: BNPLPlan[];
+  bnpl: BNPLPlan[];
   recurring: RecurringTransaction[];
   goals: Goal[];
 }
