@@ -1,8 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useMemo, useState } from 'react';
 import Button from './components/Button';
 import ThemeToggle from './components/ThemeToggle';
 import CommandPalette from './components/CommandPalette';
+import ApiStatusBanner from './components/system/ApiStatusBanner';
 import useHotkeys from './hooks/useHotkeys';
+import useRemoteData from './hooks/useRemoteData';
 import BudgetTracker from './components/BudgetTracker';
 import CashFlowProjection from './components/CashFlowProjection';
 import BNPLTrackerModal from './components/BNPLTrackerModal';
@@ -11,18 +13,19 @@ import DebtScheduleViewer from './components/DebtScheduleViewer';
 import ManageDebtsModal from './components/modals/ManageDebtsModal';
 import ManageGoalsModal from './components/modals/ManageGoalsModal';
 import ManageObligationsModal from './components/modals/ManageObligationsModal';
-import ImportDataModal from './components/modals/ImportDataModal';
+import ImportDataModal, { ImportPayload } from './components/modals/ImportDataModal';
 import CalculatorModal from './components/modals/CalculatorModal';
 import { payoff } from './logic/debt';
 import { evaluateBadges } from './logic/badges';
 import { SEEDED } from './utils/constants';
-import { exportJSON, exportPDF, exportCSVBudgets } from './utils/export';
+import { exportJSON, exportPDF, exportCSVBudgets, exportICS } from './utils/export';
 import toast from 'react-hot-toast';
-import DebtVelocityChart from './components/reports/DebtVelocityChart';
-import SpendingHeatmap from './components/reports/SpendingHeatmap';
-import GoalWaterfall from './components/reports/GoalWaterfall';
-import SankeyFlow from './components/reports/SankeyFlow';
-import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan } from './types';
+import { Budget, Goal, RecurringTransaction, Obligation, Debt, Transaction, BNPLPlan } from './types';
+
+const DebtVelocityChart = React.lazy(() => import('./components/reports/DebtVelocityChart'));
+const SpendingHeatmap = React.lazy(() => import('./components/reports/SpendingHeatmap'));
+const GoalWaterfall = React.lazy(() => import('./components/reports/GoalWaterfall'));
+const SankeyFlow = React.lazy(() => import('./components/reports/SankeyFlow'));
 
 type Tab = 'dashboard' | 'budgets' | 'projection' | 'reports';
 
@@ -30,12 +33,33 @@ export default function App(){
   const [tab, setTab] = useState<Tab>('dashboard');
   const [strategy, setStrategy] = useState<'avalanche'|'snowball'>('avalanche');
 
-  const [budgets, setBudgets] = useState<Budget[]>(() => SEEDED.budgets as Budget[]);
-  const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring as RecurringTransaction[]);
-  const [goals, setGoals] = useState<Goal[]>(() => SEEDED.goals as Goal[]);
-  const [debts, setDebts] = useState<Debt[]>(() => SEEDED.debts.map(d => ({ ...d })));
+  const [token, setToken] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const {
+    budgets,
+    addBudget,
+    updateBudgetApi,
+    deleteBudgetApi,
+    goals,
+    setGoals,
+    addGoalApi,
+    updateGoalApi,
+    deleteGoalApi,
+    debts,
+    setDebts,
+    addDebtApi,
+    updateDebtApi,
+    deleteDebtApi,
+    obligations,
+    setObligations,
+    addObligationApi,
+    updateObligationApi,
+    deleteObligationApi,
+  } = useRemoteData(token);
+  const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring);
   const [bnplPlans, setBnplPlans] = useState<BNPLPlan[]>(SEEDED.bnpl);
-  const [obligations, setObligations] = useState<Obligation[]>([]);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [showBNPL, setShowBNPL] = useState(false);
@@ -95,21 +119,129 @@ export default function App(){
   );
 
   useHotkeys(hotkeys);
+  async function handleLogin() {
+    const res = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setToken(data.token);
+    } else {
+      toast.error('Login failed');
+    }
+  }
+
+  async function handleRegister() {
+    const res = await fetch('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setToken(data.token);
+    } else {
+      toast.error('Registration failed');
+    }
+  }
 
   const handleAddBudget = useCallback((b: Budget) => {
-    setBudgets(prev => [...prev, b]);
-  }, []);
+    addBudget(b);
+  }, [addBudget]);
 
   const handleUpdateBudget = useCallback((b: Budget) => {
-    setBudgets(prev => prev.map(x => x.id === b.id ? b : x));
-  }, []);
+    updateBudgetApi(b);
+  }, [updateBudgetApi]);
 
   const handleDeleteBudget = useCallback((id: string) => {
-    setBudgets(prev => prev.filter(x => x.id !== id));
+    deleteBudgetApi(id);
+  }, [deleteBudgetApi]);
+
+  const handleDebtsChange = useCallback(
+    (next: Debt[]) => {
+      const prev = debts;
+      setDebts(next);
+      if (next.length > prev.length) {
+        const added = next.find((n) => !prev.some((d) => d.id === n.id));
+        if (added) addDebtApi(added);
+      } else if (next.length < prev.length) {
+        const removed = prev.find((d) => !next.some((n) => n.id === d.id));
+        if (removed) deleteDebtApi(removed.id);
+      } else {
+        const updated = next.find((n) => {
+          const prevItem = prev.find((d) => d.id === n.id);
+          return prevItem && JSON.stringify(prevItem) !== JSON.stringify(n);
+        });
+        if (updated) updateDebtApi(updated);
+      }
+    },
+    [debts, setDebts, addDebtApi, updateDebtApi, deleteDebtApi]
+  );
+
+  const handleGoalsChange = useCallback(
+    (next: Goal[]) => {
+      const prev = goals;
+      setGoals(next);
+      if (next.length > prev.length) {
+        const added = next.find((n) => !prev.some((d) => d.id === n.id));
+        if (added) addGoalApi(added);
+      } else if (next.length < prev.length) {
+        const removed = prev.find((d) => !next.some((n) => n.id === d.id));
+        if (removed) deleteGoalApi(removed.id);
+      } else {
+        const updated = next.find((n) => {
+          const prevItem = prev.find((d) => d.id === n.id);
+          return prevItem && JSON.stringify(prevItem) !== JSON.stringify(n);
+        });
+        if (updated) updateGoalApi(updated);
+      }
+    },
+    [goals, setGoals, addGoalApi, updateGoalApi, deleteGoalApi]
+  );
+
+  const handleObligationsChange = useCallback(
+    (next: Obligation[]) => {
+      const prev = obligations;
+      setObligations(next);
+      if (next.length > prev.length) {
+        const added = next.find((n) => !prev.some((d) => d.id === n.id));
+        if (added) addObligationApi(added);
+      } else if (next.length < prev.length) {
+        const removed = prev.find((d) => !next.some((n) => n.id === d.id));
+        if (removed) deleteObligationApi(removed.id);
+      } else {
+        const updated = next.find((n) => {
+          const prevItem = prev.find((d) => d.id === n.id);
+          return prevItem && JSON.stringify(prevItem) !== JSON.stringify(n);
+        });
+        if (updated) updateObligationApi(updated);
+      }
+    },
+    [obligations, setObligations, addObligationApi, updateObligationApi, deleteObligationApi]
+  );
+
+  const handleTransactions = useCallback((ts: Transaction[]) => {
+    toast.success('Imported ' + ts.length + ' transactions');
   }, []);
 
-  function handleExport(kind: 'json'|'csv'|'pdf') {
-    const payload = { budgets, recurring, goals, debts, bnplPlans };
+  if (!token) {
+    return (
+      <div className="p-4 max-w-sm mx-auto space-y-2">
+        <h1 className="text-xl font-semibold">Project Thrive Login</h1>
+        <input className="w-full p-2 border" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className="w-full p-2 border" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <div className="flex gap-2">
+          <Button onClick={handleLogin}>Login</Button>
+          <Button variant="secondary" onClick={handleRegister}>Register</Button>
+        </div>
+      </div>
+    );
+  }
+
+  function handleExport(kind: 'json'|'csv'|'pdf'|'ics') {
+    const payload = { budgets, recurring, goals, debts, bnplPlans, obligations };
     if (kind === 'json') exportJSON('chatpay-data.json', payload);
     if (kind === 'csv') exportCSVBudgets('chatpay-budgets.csv', budgets);
     if (kind === 'pdf') exportPDF('chatpay-summary.pdf',
@@ -120,23 +252,28 @@ export default function App(){
       'Debts: ' + debts.length + '\n' +
       'BNPL: ' + bnplPlans.length + '\n'
     );
+    if (kind === 'ics') exportICS('chatpay-schedule.ics', bnplPlans, obligations);
   }
 
-  function handleImport(payload: any) {
+  function handleImport(payload: ImportPayload) {
     try {
-      if (payload.budgets) setBudgets(payload.budgets);
-      if (payload.debts) setDebts(payload.debts);
-      if (payload.recurring) setRecurring(payload.recurring);
-      if (payload.goals) setGoals(payload.goals);
+      payload.budgets.forEach((b) => addBudget(b));
+      handleDebtsChange(payload.debts);
+      setRecurring(payload.recurring);
+      handleGoalsChange(payload.goals);
+      if (payload.obligations) handleObligationsChange(payload.obligations);
       if (payload.bnplPlans) setBnplPlans(payload.bnplPlans);
+      if (payload.transactions) handleTransactions(payload.transactions);
       toast.success('Import complete');
     } catch (e) {
-      toast.error('Import failed: ' + (e as any)?.message);
+      const message = e instanceof Error ? e.message : String(e);
+      toast.error('Import failed: ' + message);
     }
   }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <ApiStatusBanner />
       <header className="sticky top-0 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -158,6 +295,8 @@ export default function App(){
             <Button variant="secondary" onClick={()=>handleExport('json')}>Export JSON</Button>
             <Button variant="secondary" onClick={()=>handleExport('csv')}>CSV</Button>
             <Button variant="secondary" onClick={()=>handleExport('pdf')}>PDF</Button>
+            <Button variant="secondary" onClick={()=>handleExport('ics')}>ICS</Button>
+            <Button variant="secondary" onClick={()=>setToken(null)}>Logout</Button>
             <ThemeToggle />
           </div>
         </div>
@@ -201,24 +340,26 @@ export default function App(){
         )}
 
         {tab === 'reports' && (
-          <div className="space-y-6">
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="font-medium mb-2">Debt Velocity</div>
-              <DebtVelocityChart plan={plan} />
+          <Suspense fallback={<div>Loading reports...</div>}>
+            <div className="space-y-6">
+              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="font-medium mb-2">Debt Velocity</div>
+                <DebtVelocityChart plan={plan} />
+              </div>
+              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="font-medium mb-2">Spending Heatmap</div>
+                <SpendingHeatmap matrix={heatmap} />
+              </div>
+              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="font-medium mb-2">Goal Waterfall</div>
+                <GoalWaterfall goals={goals.map(g=>({ name:g.name, current:g.current, target:g.target }))} />
+              </div>
+              <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="font-medium mb-2">Income Flow</div>
+                <SankeyFlow flows={flows} />
+              </div>
             </div>
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="font-medium mb-2">Spending Heatmap</div>
-              <SpendingHeatmap matrix={heatmap} />
-            </div>
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="font-medium mb-2">Goal Waterfall</div>
-              <GoalWaterfall goals={goals.map(g=>({ name:g.name, current:g.current, target:g.target }))} />
-            </div>
-            <div className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <div className="font-medium mb-2">Income Flow</div>
-              <SankeyFlow flows={flows} />
-            </div>
-          </div>
+          </Suspense>
         )}
       </main>
 
@@ -242,10 +383,16 @@ export default function App(){
 
       <BNPLTrackerModal open={showBNPL} onClose={()=>setShowBNPL(false)} plans={bnplPlans} />
       <ShiftImpactModal open={showShiftImpact} onClose={()=>setShowShiftImpact(false)} />
-      <ManageDebtsModal open={showManageDebts} onClose={()=>setShowManageDebts(false)} debts={debts} onChange={setDebts} />
-      <ManageGoalsModal open={showManageGoals} onClose={()=>setShowManageGoals(false)} goals={goals} onChange={setGoals} />
-      <ManageObligationsModal open={showManageObligations} onClose={()=>setShowManageObligations(false)} obligations={obligations} onChange={setObligations} />
-      <ImportDataModal open={showImport} onClose={()=>setShowImport(false)} onImport={handleImport} />
+      <ManageDebtsModal open={showManageDebts} onClose={()=>setShowManageDebts(false)} debts={debts} onChange={handleDebtsChange} />
+      <ManageGoalsModal open={showManageGoals} onClose={()=>setShowManageGoals(false)} goals={goals} onChange={handleGoalsChange} />
+      <ManageObligationsModal open={showManageObligations} onClose={()=>setShowManageObligations(false)} obligations={obligations} onChange={handleObligationsChange} />
+      <ImportDataModal
+        open={showImport}
+        onClose={()=>setShowImport(false)}
+        onImport={handleImport}
+        budgets={budgets}
+        onTransactions={handleTransactions}
+      />
       <CalculatorModal open={showCalc} onClose={()=>setShowCalc(false)} debts={debts} />
     </div>
   );

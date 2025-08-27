@@ -1,32 +1,28 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
-import type { Debt, BNPLPlan } from '../../types';
-
-type ImportPayload = {
-  budgets?: any[];
-  debts?: Debt[];
-  bnplPlans?: BNPLPlan[];
-  recurring?: any[];
-  goals?: any[];
-};
-
-function validate(p: any): p is ImportPayload {
-  if (typeof p !== 'object' || p === null) return false;
-  const allowed = ['budgets','debts','bnplPlans','recurring','goals'];
-  for (const k of Object.keys(p)) if (!allowed.includes(k)) return false;
-  return true;
-}
+import { importSchema, type ImportPayload } from '../../schema/import';
+import type { Budget, Transaction } from '../../types';
+export type { ImportPayload } from '../../schema/import';
 
 export default function ImportDataModal({
-  open, onClose, onImport
+  open,
+  onClose,
+  onImport,
+  budgets,
+  onTransactions,
 }: {
   open: boolean;
   onClose: () => void;
   onImport: (payload: ImportPayload) => void;
+  budgets: Budget[];
+  onTransactions?: (txns: Transaction[]) => void;
 }) {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // budgets are currently unused but may support transaction category mapping in the future
+  void budgets;
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -39,11 +35,18 @@ export default function ImportDataModal({
     setError(null);
     try {
       const json = JSON.parse(text);
-      if (!validate(json)) { setError('Invalid schema. Expect a JSON object with keys: budgets, debts, bnplPlans, recurring, goals'); return; }
-      onImport(json);
+      const result = importSchema.safeParse(json);
+      if (!result.success) {
+        setError(result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '));
+        return;
+      }
+      onImport(result.data);
+      if (onTransactions && result.data.transactions) {
+        onTransactions(result.data.transactions);
+      }
       onClose();
-    } catch (e: any) {
-      setError('Invalid JSON: ' + (e?.message || String(e)));
+    } catch (e) {
+      setError('Invalid JSON: ' + (e instanceof Error ? e.message : String(e)));
     }
   }
 
