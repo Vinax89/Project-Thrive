@@ -55,5 +55,5 @@ export default function useRemoteList<T extends { id: string }>(path: string, to
     setList((prev) => prev.filter((x) => x.id !== id));
   }, [path, token]);
 
-  return { list, create, update, remove } as const;
+  return { list, setList, create, update, remove } as const;
 }

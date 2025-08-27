@@ -37,9 +37,9 @@ export default function App(){
   const [password, setPassword] = useState('');
 
   const { list: budgets, create: addBudget, update: updateBudgetApi, remove: deleteBudgetApi } = useRemoteList<Budget>('budgets', token);
-  const { list: goals, create: addGoalApi, update: updateGoalApi, remove: deleteGoalApi } = useRemoteList<Goal>('goals', token);
-  const { list: debts, create: addDebtApi, update: updateDebtApi, remove: deleteDebtApi } = useRemoteList<Debt>('debts', token);
-  const { list: obligations, create: addObligationApi, update: updateObligationApi, remove: deleteObligationApi } = useRemoteList<Obligation>('obligations', token);
+  const { list: goals, setList: setGoals, create: addGoalApi, update: updateGoalApi, remove: deleteGoalApi } = useRemoteList<Goal>('goals', token);
+  const { list: debts, setList: setDebts, create: addDebtApi, update: updateDebtApi, remove: deleteDebtApi } = useRemoteList<Debt>('debts', token);
+  const { list: obligations, setList: setObligations, create: addObligationApi, update: updateObligationApi, remove: deleteObligationApi } = useRemoteList<Obligation>('obligations', token);
   const { list: bnpl, create: addBnplApi } = useRemoteList<BNPLPlan>('bnpl', token);
   const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring);
 
@@ -141,53 +141,68 @@ export default function App(){
     deleteBudgetApi(id);
   }, [deleteBudgetApi]);
 
-  const handleDebtsChange = useCallback((next: Debt[]) => {
-    if (next.length > debts.length) {
-      const added = next.find((n) => !debts.some((d) => d.id === n.id));
-      if (added) addDebtApi(added);
-    } else if (next.length < debts.length) {
-      const removed = debts.find((d) => !next.some((n) => n.id === d.id));
-      if (removed) deleteDebtApi(removed.id);
-    } else {
-      const updated = next.find((n) => {
-        const prev = debts.find((d) => d.id === n.id);
-        return prev && JSON.stringify(prev) !== JSON.stringify(n);
-      });
-      if (updated) updateDebtApi(updated);
-    }
-  }, [debts, addDebtApi, updateDebtApi, deleteDebtApi]);
+  const handleDebtsChange = useCallback(
+    (next: Debt[]) => {
+      const prev = debts;
+      setDebts(next);
+      if (next.length > prev.length) {
+        const added = next.find((n) => !prev.some((d) => d.id === n.id));
+        if (added) addDebtApi(added);
+      } else if (next.length < prev.length) {
+        const removed = prev.find((d) => !next.some((n) => n.id === d.id));
+        if (removed) deleteDebtApi(removed.id);
+      } else {
+        const updated = next.find((n) => {
+          const prevItem = prev.find((d) => d.id === n.id);
+          return prevItem && JSON.stringify(prevItem) !== JSON.stringify(n);
+        });
+        if (updated) updateDebtApi(updated);
+      }
+    },
+    [debts, setDebts, addDebtApi, updateDebtApi, deleteDebtApi]
+  );
 
-  const handleGoalsChange = useCallback((next: Goal[]) => {
-    if (next.length > goals.length) {
-      const added = next.find((n) => !goals.some((d) => d.id === n.id));
-      if (added) addGoalApi(added);
-    } else if (next.length < goals.length) {
-      const removed = goals.find((d) => !next.some((n) => n.id === d.id));
-      if (removed) deleteGoalApi(removed.id);
-    } else {
-      const updated = next.find((n) => {
-        const prev = goals.find((d) => d.id === n.id);
-        return prev && JSON.stringify(prev) !== JSON.stringify(n);
-      });
-      if (updated) updateGoalApi(updated);
-    }
-  }, [goals, addGoalApi, updateGoalApi, deleteGoalApi]);
+  const handleGoalsChange = useCallback(
+    (next: Goal[]) => {
+      const prev = goals;
+      setGoals(next);
+      if (next.length > prev.length) {
+        const added = next.find((n) => !prev.some((d) => d.id === n.id));
+        if (added) addGoalApi(added);
+      } else if (next.length < prev.length) {
+        const removed = prev.find((d) => !next.some((n) => n.id === d.id));
+        if (removed) deleteGoalApi(removed.id);
+      } else {
+        const updated = next.find((n) => {
+          const prevItem = prev.find((d) => d.id === n.id);
+          return prevItem && JSON.stringify(prevItem) !== JSON.stringify(n);
+        });
+        if (updated) updateGoalApi(updated);
+      }
+    },
+    [goals, setGoals, addGoalApi, updateGoalApi, deleteGoalApi]
+  );
 
-  const handleObligationsChange = useCallback((next: Obligation[]) => {
-    if (next.length > obligations.length) {
-      const added = next.find((n) => !obligations.some((d) => d.id === n.id));
-      if (added) addObligationApi(added);
-    } else if (next.length < obligations.length) {
-      const removed = obligations.find((d) => !next.some((n) => n.id === d.id));
-      if (removed) deleteObligationApi(removed.id);
-    } else {
-      const updated = next.find((n) => {
-        const prev = obligations.find((d) => d.id === n.id);
-        return prev && JSON.stringify(prev) !== JSON.stringify(n);
-      });
-      if (updated) updateObligationApi(updated);
-    }
-  }, [obligations, addObligationApi, updateObligationApi, deleteObligationApi]);
+  const handleObligationsChange = useCallback(
+    (next: Obligation[]) => {
+      const prev = obligations;
+      setObligations(next);
+      if (next.length > prev.length) {
+        const added = next.find((n) => !prev.some((d) => d.id === n.id));
+        if (added) addObligationApi(added);
+      } else if (next.length < prev.length) {
+        const removed = prev.find((d) => !next.some((n) => n.id === d.id));
+        if (removed) deleteObligationApi(removed.id);
+      } else {
+        const updated = next.find((n) => {
+          const prevItem = prev.find((d) => d.id === n.id);
+          return prevItem && JSON.stringify(prevItem) !== JSON.stringify(n);
+        });
+        if (updated) updateObligationApi(updated);
+      }
+    },
+    [obligations, setObligations, addObligationApi, updateObligationApi, deleteObligationApi]
+  );
 
   const handleTransactions = useCallback((ts: Transaction[]) => {
     toast.success('Imported ' + ts.length + ' transactions');
