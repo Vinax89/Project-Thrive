@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateBadges } from './badges';
-import type { PlanStep } from './debt';
+import { evaluateBadges } from '../badges';
+import type { PlanStep } from '../debt';
 
 const makeStep = (balances: Record<string, number>): PlanStep => ({
   month: 0,
