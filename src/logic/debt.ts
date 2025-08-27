@@ -1,10 +1,5 @@
-export type Debt = {
-  id: string;
-  name: string;
-  balance: number;
-  apr: number; // annual percent
-  minPayment: number;
-};
+import type { Debt } from '../types';
+export type { Debt };
 
 export type PlanStep = {
   month: number;

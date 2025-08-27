@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
-import DebtModal, { Debt } from './DebtModal';
+import DebtModal from './DebtModal';
+import type { Debt } from '../../types';
 
 export default function ManageDebtsModal({
   open, onClose, debts, onChange

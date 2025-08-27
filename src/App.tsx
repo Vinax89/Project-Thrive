@@ -22,7 +22,7 @@ import DebtVelocityChart from './components/reports/DebtVelocityChart';
 import SpendingHeatmap from './components/reports/SpendingHeatmap';
 import GoalWaterfall from './components/reports/GoalWaterfall';
 import SankeyFlow from './components/reports/SankeyFlow';
-import { Budget, Goal, RecurringTransaction, Obligation } from './types';
+import { Budget, Goal, RecurringTransaction, Obligation, Debt } from './types';
 
 type Tab = 'dashboard' | 'budgets' | 'projection' | 'reports';
 
@@ -33,7 +33,7 @@ export default function App(){
   const [budgets, setBudgets] = useState<Budget[]>(() => SEEDED.budgets as Budget[]);
   const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring as RecurringTransaction[]);
   const [goals, setGoals] = useState<Goal[]>(() => SEEDED.goals as Goal[]);
-  const [debts, setDebts] = useState(() => SEEDED.debts.map(d => ({ ...d })));
+  const [debts, setDebts] = useState<Debt[]>(() => SEEDED.debts.map(d => ({ ...d }))); 
   const [obligations, setObligations] = useState<Obligation[]>([]);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -49,7 +49,7 @@ export default function App(){
 
   const plan = useMemo(()=> {
     const unlocked = new Set<string>();
-    return payoff(debts as any, monthlyDebtBudget, strategy, 600, (step)=> {
+    return payoff(debts, monthlyDebtBudget, strategy, 600, (step)=> {
       const newly = evaluateBadges(step, unlocked);
       if (newly.length) toast.success('Milestone: ' + newly.join(', '));
       return newly;
@@ -116,7 +116,7 @@ export default function App(){
       'Budgets: ' + budgets.length + '\n' +
       'Recurring: ' + recurring.length + '\n' +
       'Goals: ' + goals.length + '\n' +
-      'Debts: ' + (debts as any[]).length + '\n' +
+      'Debts: ' + debts.length + '\n' +
       'BNPL: ' + (SEEDED.bnpl as any[]).length + '\n'
     );
   }

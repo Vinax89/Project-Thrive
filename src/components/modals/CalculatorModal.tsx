@@ -3,8 +3,7 @@ import Modal from '../Modal';
 import Input from '../Input';
 import Select from '../Select';
 import { payoff } from '../../logic/debt';
-
-type Debt = { id:string; name:string; balance:number; apr:number; minPayment:number };
+import type { Debt } from '../../types';
 
 export default function CalculatorModal({
   open, onClose, debts
