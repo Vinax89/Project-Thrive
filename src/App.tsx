@@ -2,6 +2,7 @@ import React, { Suspense, useCallback, useMemo, useState } from 'react';
 import Button from './components/Button';
 import ThemeToggle from './components/ThemeToggle';
 import CommandPalette from './components/CommandPalette';
+import ApiStatusBanner from './components/system/ApiStatusBanner';
 import useHotkeys from './hooks/useHotkeys';
 import useRemoteList from './hooks/useRemoteList';
 import BudgetTracker from './components/BudgetTracker';
@@ -255,6 +256,7 @@ export default function App(){
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <ApiStatusBanner />
       <header className="sticky top-0 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
