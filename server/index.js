@@ -115,6 +115,17 @@ function listRouter(key) {
   return router;
 }
 
+app.get('/api/data', auth, (req, res) => {
+  const user = store.getUser(req.user.email);
+  res.json({
+    budgets: user.budgets || [],
+    goals: user.goals || [],
+    debts: user.debts || [],
+    obligations: user.obligations || [],
+    bnpl: user.bnpl || [],
+  });
+});
+
 app.use('/api/budgets', listRouter('budgets'));
 app.use('/api/debts', listRouter('debts'));
 app.use('/api/goals', listRouter('goals'));

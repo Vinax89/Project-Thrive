@@ -4,7 +4,7 @@ import ThemeToggle from './components/ThemeToggle';
 import CommandPalette from './components/CommandPalette';
 import ApiStatusBanner from './components/system/ApiStatusBanner';
 import useHotkeys from './hooks/useHotkeys';
-import useRemoteList from './hooks/useRemoteList';
+import useRemoteData from './hooks/useRemoteData';
 import BudgetTracker from './components/BudgetTracker';
 import CashFlowProjection from './components/CashFlowProjection';
 import BNPLTrackerModal from './components/BNPLTrackerModal';
@@ -20,7 +20,7 @@ import { evaluateBadges } from './logic/badges';
 import { SEEDED } from './utils/constants';
 import { exportJSON, exportPDF, exportCSVBudgets, exportICS } from './utils/export';
 import toast from 'react-hot-toast';
-import { Budget, Goal, RecurringTransaction, Obligation, Debt, BNPLPlan, Transaction } from './types';
+import { Budget, Goal, RecurringTransaction, Obligation, Debt, Transaction } from './types';
 
 const DebtVelocityChart = React.lazy(() => import('./components/reports/DebtVelocityChart'));
 const SpendingHeatmap = React.lazy(() => import('./components/reports/SpendingHeatmap'));
@@ -37,11 +37,29 @@ export default function App(){
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const { list: budgets, create: addBudget, update: updateBudgetApi, remove: deleteBudgetApi } = useRemoteList<Budget>('budgets', token);
-  const { list: goals, setList: setGoals, create: addGoalApi, update: updateGoalApi, remove: deleteGoalApi } = useRemoteList<Goal>('goals', token);
-  const { list: debts, setList: setDebts, create: addDebtApi, update: updateDebtApi, remove: deleteDebtApi } = useRemoteList<Debt>('debts', token);
-  const { list: obligations, setList: setObligations, create: addObligationApi, update: updateObligationApi, remove: deleteObligationApi } = useRemoteList<Obligation>('obligations', token);
-  const { list: bnpl, create: addBnplApi } = useRemoteList<BNPLPlan>('bnpl', token);
+  const {
+    budgets,
+    addBudget,
+    updateBudgetApi,
+    deleteBudgetApi,
+    goals,
+    setGoals,
+    addGoalApi,
+    updateGoalApi,
+    deleteGoalApi,
+    debts,
+    setDebts,
+    addDebtApi,
+    updateDebtApi,
+    deleteDebtApi,
+    obligations,
+    setObligations,
+    addObligationApi,
+    updateObligationApi,
+    deleteObligationApi,
+    bnpl,
+    addBnplApi,
+  } = useRemoteData(token);
   const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
