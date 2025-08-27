@@ -28,7 +28,7 @@ export default function DebtScheduleViewer({ plan }: { plan: PlanResult }) {
 
   const ROW_HEIGHT = 40;
 
-  const TableRow = ({ index, style }: ListChildComponentProps) => {
+  function TableRow({ index, style }: ListChildComponentProps) {
     const s = plan.schedule[index];
     return (
       <tr key={s.month} style={style} className="border-b border-gray-100 dark:border-gray-800">
@@ -39,11 +39,12 @@ export default function DebtScheduleViewer({ plan }: { plan: PlanResult }) {
         <td className="py-2 pr-4">{(s.unlockedBadges || []).join(', ')}</td>
       </tr>
     );
-  };
+  }
 
   const TBody = React.forwardRef<HTMLTableSectionElement, React.HTMLAttributes<HTMLTableSectionElement>>(
     (props, ref) => <tbody ref={ref} {...props} />
   );
+  TBody.displayName = 'TBody';
 
   return (
     <div className="space-y-4">

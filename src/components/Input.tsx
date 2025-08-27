@@ -6,7 +6,8 @@ export default function Input({
   className = '',
   ...props
 }: { label?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  const inputId = id ?? React.useId();
+  const uniqueId = React.useId();
+  const inputId = id ?? uniqueId;
   return (
     <div className="flex flex-col">
       {label && (

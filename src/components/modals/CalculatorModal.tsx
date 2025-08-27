@@ -17,7 +17,7 @@ export default function CalculatorModal({
     <Modal open={open} onClose={onClose} title="Debt Payoff Calculator">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Input label="Monthly Payoff Budget" type="number" value={budget} onChange={e=>setBudget(parseFloat(e.target.value)||0)} />
-        <Select label="Method" value={method} onChange={e=>setMethod(e.target.value as any)}>
+        <Select label="Method" value={method} onChange={e => setMethod(e.target.value as 'snowball' | 'avalanche')}>
           <option value="avalanche">Avalanche (highest APR first)</option>
           <option value="snowball">Snowball (smallest balance first)</option>
         </Select>

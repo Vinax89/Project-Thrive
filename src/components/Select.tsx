@@ -7,7 +7,8 @@ export default function Select({
   children,
   ...props
 }: { label?: string } & React.SelectHTMLAttributes<HTMLSelectElement>) {
-  const selectId = id ?? React.useId();
+  const uniqueId = React.useId();
+  const selectId = id ?? uniqueId;
   return (
     <div className="flex flex-col">
       {label && (
