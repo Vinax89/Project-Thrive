@@ -78,12 +78,19 @@ function isGoal(item: any): item is Goal {
 }
 
 function validate(payload: any): payload is ImportPayload {
+  if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
+    return false;
+  }
+  const allowed = ['budgets', 'debts', 'bnpl', 'recurring', 'goals'];
+  if (!Object.keys(payload).every((k) => allowed.includes(k))) {
+    return false;
+  }
   return (
-    Array.isArray(payload?.budgets) && payload.budgets.every(isBudget) &&
-    Array.isArray(payload?.debts) && payload.debts.every(isDebt) &&
-    Array.isArray(payload?.bnpl) && payload.bnpl.every(isBNPLPlan) &&
-    Array.isArray(payload?.recurring) && payload.recurring.every(isRecurringTransaction) &&
-    Array.isArray(payload?.goals) && payload.goals.every(isGoal)
+    (!('budgets' in payload) || (Array.isArray(payload.budgets) && payload.budgets.every(isBudget))) &&
+    (!('debts' in payload) || (Array.isArray(payload.debts) && payload.debts.every(isDebt))) &&
+    (!('bnpl' in payload) || (Array.isArray(payload.bnpl) && payload.bnpl.every(isBNPLPlan))) &&
+    (!('recurring' in payload) || (Array.isArray(payload.recurring) && payload.recurring.every(isRecurringTransaction))) &&
+    (!('goals' in payload) || (Array.isArray(payload.goals) && payload.goals.every(isGoal)))
   );
 }
 
@@ -109,7 +116,9 @@ export default function ImportDataModal({
     try {
       const json = JSON.parse(text);
       if (!validate(json)) {
-        setError('Invalid schema. Expect a JSON object with keys: budgets, debts, bnpl, recurring, goals');
+        setError(
+          'Invalid schema. Expect an object with optional arrays budgets, debts, bnpl, recurring, goals and no other keys'
+        );
         return;
       }
       onImport(json);
