@@ -1,12 +1,76 @@
 import React, { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
-import type { DataPayload } from '../../types';
+import type { DataPayload, Budget, Debt, BNPLPlan, RecurringTransaction, Goal } from '../../types';
+
+function isObject(v: any): v is Record<string, any> {
+  return typeof v === 'object' && v !== null;
+}
+
+function isBudget(v: any): v is Budget {
+  return (
+    isObject(v) &&
+    typeof v.id === 'string' &&
+    typeof v.category === 'string' &&
+    typeof v.allocated === 'number' &&
+    typeof v.spent === 'number'
+  );
+}
+
+function isDebt(v: any): v is Debt {
+  return (
+    isObject(v) &&
+    typeof v.id === 'string' &&
+    typeof v.name === 'string' &&
+    typeof v.balance === 'number' &&
+    typeof v.apr === 'number' &&
+    typeof v.minPayment === 'number'
+  );
+}
+
+function isBNPLPlan(v: any): v is BNPLPlan {
+  return (
+    isObject(v) &&
+    typeof v.id === 'string' &&
+    typeof v.provider === 'string' &&
+    typeof v.description === 'string' &&
+    typeof v.total === 'number' &&
+    typeof v.remaining === 'number' &&
+    Array.isArray(v.dueDates)
+  );
+}
+
+function isRecurring(v: any): v is RecurringTransaction {
+  return (
+    isObject(v) &&
+    typeof v.id === 'string' &&
+    typeof v.name === 'string' &&
+    typeof v.type === 'string' &&
+    typeof v.amount === 'number'
+  );
+}
+
+function isGoal(v: any): v is Goal {
+  return (
+    isObject(v) &&
+    typeof v.id === 'string' &&
+    typeof v.name === 'string' &&
+    typeof v.target === 'number' &&
+    typeof v.current === 'number'
+  );
+}
 
 function validate(p: any): p is DataPayload {
-  if (typeof p !== 'object' || p === null) return false;
+  if (!isObject(p)) return false;
   const allowed = ['budgets','debts','bnplPlans','recurring','goals'];
   for (const k of Object.keys(p)) if (!allowed.includes(k)) return false;
+
+  if (p.budgets && (!Array.isArray(p.budgets) || !p.budgets.every(isBudget))) return false;
+  if (p.debts && (!Array.isArray(p.debts) || !p.debts.every(isDebt))) return false;
+  if (p.bnplPlans && (!Array.isArray(p.bnplPlans) || !p.bnplPlans.every(isBNPLPlan))) return false;
+  if (p.recurring && (!Array.isArray(p.recurring) || !p.recurring.every(isRecurring))) return false;
+  if (p.goals && (!Array.isArray(p.goals) || !p.goals.every(isGoal))) return false;
+
   return true;
 }
 

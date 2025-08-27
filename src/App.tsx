@@ -30,11 +30,11 @@ export default function App(){
   const [tab, setTab] = useState<Tab>('dashboard');
   const [strategy, setStrategy] = useState<'avalanche'|'snowball'>('avalanche');
 
-  const [budgets, setBudgets] = useState<Budget[]>(() => SEEDED.budgets as Budget[]);
-  const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring as RecurringTransaction[]);
-  const [goals, setGoals] = useState<Goal[]>(() => SEEDED.goals as Goal[]);
+  const [budgets, setBudgets] = useState<Budget[]>(() => SEEDED.budgets);
+  const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring);
+  const [goals, setGoals] = useState<Goal[]>(() => SEEDED.goals);
   const [debts, setDebts] = useState<Debt[]>(() => SEEDED.debts.map(d => ({ ...d })));
-  const [bnplPlans, setBnplPlans] = useState<BNPLPlan[]>(() => SEEDED.bnplPlans as BNPLPlan[]);
+  const [bnplPlans, setBnplPlans] = useState<BNPLPlan[]>(() => SEEDED.bnplPlans);
   const [obligations, setObligations] = useState<Obligation[]>([]);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
