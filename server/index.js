@@ -4,6 +4,8 @@ const cors = require('cors');
 const path = require('path');
 const { Store } = require('./persistence');
 const { makeToken, verifyToken } = require('./utils/jwt');
+const { Debt } = require('./validators');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 
@@ -29,6 +31,7 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '1mb' }));
+app.use(rateLimit({ windowMs: 60_000, max: 120 }));
 
 // Auth middleware
 function auth(req, res, next) {
@@ -86,10 +89,15 @@ function listRouter(key) {
   router.post('/', auth, async (req, res) => {
     const user = store.getUser(req.user.email);
     const item = { id: req.body.id || String(Date.now()), ...req.body };
-    user[key] = user[key] || [];
-    user[key].push(item);
-    store.save();
-    res.status(201).json(item);
+    try {
+      const valid = key==='debts' ? Debt.parse(item) : item;
+      user[key] = user[key] || [];
+      user[key].push(valid);
+      store.save();
+      res.status(201).json(valid);
+    } catch(e){
+      return res.status(422).json({ error: 'Invalid payload', details: e.errors ?? String(e) });
+    }
   });
   // Update
   router.put('/:id', auth, async (req, res) => {
@@ -98,9 +106,14 @@ function listRouter(key) {
     const arr = user[key] || [];
     const idx = arr.findIndex(x => String(x.id) === String(id));
     if (idx === -1) return res.status(404).json({ error: 'not found' });
-    arr[idx] = { ...arr[idx], ...req.body, id };
-    store.save();
-    res.json(arr[idx]);
+    try {
+      const patch = key==='debts' ? Debt.partial().parse(req.body) : req.body;
+      arr[idx] = { ...arr[idx], ...patch, id };
+      store.save();
+      res.json(arr[idx]);
+    } catch(e){
+      return res.status(422).json({ error: 'Invalid payload', details: e.errors ?? String(e) });
+    }
   });
   // Delete
   router.delete('/:id', auth, async (req, res) => {
