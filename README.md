@@ -32,6 +32,18 @@ Preview the production build locally:
 npm run preview
 ```
 
+### Backend API
+
+A lightweight Express server provides CRUD endpoints and JWT auth for budgets, debts, goals, obligations, and BNPL plans. To run it locally:
+
+```bash
+cd server
+npm install
+npm start
+```
+
+The API listens on `http://localhost:3000` and requires a valid token from `/api/auth/register` or `/api/auth/login`.
+
 ### Testing and Linting
 
 Run the unit tests with [Vitest](https://vitest.dev/):

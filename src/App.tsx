@@ -3,6 +3,7 @@ import Button from './components/Button';
 import ThemeToggle from './components/ThemeToggle';
 import CommandPalette from './components/CommandPalette';
 import useHotkeys from './hooks/useHotkeys';
+import useRemoteList from './hooks/useRemoteList';
 import BudgetTracker from './components/BudgetTracker';
 import CashFlowProjection from './components/CashFlowProjection';
 import BNPLTrackerModal from './components/BNPLTrackerModal';
@@ -31,12 +32,16 @@ export default function App(){
   const [tab, setTab] = useState<Tab>('dashboard');
   const [strategy, setStrategy] = useState<'avalanche'|'snowball'>('avalanche');
 
-  const [budgets, setBudgets] = useState<Budget[]>(() => SEEDED.budgets);
+  const [token, setToken] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const { list: budgets, create: addBudget, update: updateBudgetApi, remove: deleteBudgetApi } = useRemoteList<Budget>('budgets', token);
+  const { list: goals, create: addGoalApi, update: updateGoalApi, remove: deleteGoalApi } = useRemoteList<Goal>('goals', token);
+  const { list: debts, create: addDebtApi, update: updateDebtApi, remove: deleteDebtApi } = useRemoteList<Debt>('debts', token);
+  const { list: obligations, create: addObligationApi, update: updateObligationApi, remove: deleteObligationApi } = useRemoteList<Obligation>('obligations', token);
+  const { list: bnpl, create: addBnplApi, update: updateBnplApi, remove: deleteBnplApi } = useRemoteList<BNPLPlan>('bnpl', token);
   const [recurring, setRecurring] = useState<RecurringTransaction[]>(() => SEEDED.recurring);
-  const [goals, setGoals] = useState<Goal[]>(() => SEEDED.goals);
-  const [debts, setDebts] = useState<Debt[]>(() => SEEDED.debts.map(d => ({ ...d })));
-  const [bnpl, setBnpl] = useState<BNPLPlan[]>(() => SEEDED.bnpl);
-  const [obligations, setObligations] = useState<Obligation[]>([]);
 
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [showBNPL, setShowBNPL] = useState(false);
@@ -96,18 +101,107 @@ export default function App(){
   );
 
   useHotkeys(hotkeys);
+  async function handleLogin() {
+    const res = await fetch('http://localhost:3000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setToken(data.token);
+    } else {
+      toast.error('Login failed');
+    }
+  }
+
+  async function handleRegister() {
+    const res = await fetch('http://localhost:3000/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setToken(data.token);
+    } else {
+      toast.error('Registration failed');
+    }
+  }
 
   const handleAddBudget = useCallback((b: Budget) => {
-    setBudgets(prev => [...prev, b]);
-  }, []);
+    addBudget(b);
+  }, [addBudget]);
 
   const handleUpdateBudget = useCallback((b: Budget) => {
-    setBudgets(prev => prev.map(x => x.id === b.id ? b : x));
-  }, []);
+    updateBudgetApi(b);
+  }, [updateBudgetApi]);
 
   const handleDeleteBudget = useCallback((id: string) => {
-    setBudgets(prev => prev.filter(x => x.id !== id));
-  }, []);
+    deleteBudgetApi(id);
+  }, [deleteBudgetApi]);
+
+  const handleDebtsChange = useCallback((next: Debt[]) => {
+    if (next.length > debts.length) {
+      const added = next.find((n) => !debts.some((d) => d.id === n.id));
+      if (added) addDebtApi(added);
+    } else if (next.length < debts.length) {
+      const removed = debts.find((d) => !next.some((n) => n.id === d.id));
+      if (removed) deleteDebtApi(removed.id);
+    } else {
+      const updated = next.find((n) => {
+        const prev = debts.find((d) => d.id === n.id);
+        return prev && JSON.stringify(prev) !== JSON.stringify(n);
+      });
+      if (updated) updateDebtApi(updated);
+    }
+  }, [debts, addDebtApi, updateDebtApi, deleteDebtApi]);
+
+  const handleGoalsChange = useCallback((next: Goal[]) => {
+    if (next.length > goals.length) {
+      const added = next.find((n) => !goals.some((d) => d.id === n.id));
+      if (added) addGoalApi(added);
+    } else if (next.length < goals.length) {
+      const removed = goals.find((d) => !next.some((n) => n.id === d.id));
+      if (removed) deleteGoalApi(removed.id);
+    } else {
+      const updated = next.find((n) => {
+        const prev = goals.find((d) => d.id === n.id);
+        return prev && JSON.stringify(prev) !== JSON.stringify(n);
+      });
+      if (updated) updateGoalApi(updated);
+    }
+  }, [goals, addGoalApi, updateGoalApi, deleteGoalApi]);
+
+  const handleObligationsChange = useCallback((next: Obligation[]) => {
+    if (next.length > obligations.length) {
+      const added = next.find((n) => !obligations.some((d) => d.id === n.id));
+      if (added) addObligationApi(added);
+    } else if (next.length < obligations.length) {
+      const removed = obligations.find((d) => !next.some((n) => n.id === d.id));
+      if (removed) deleteObligationApi(removed.id);
+    } else {
+      const updated = next.find((n) => {
+        const prev = obligations.find((d) => d.id === n.id);
+        return prev && JSON.stringify(prev) !== JSON.stringify(n);
+      });
+      if (updated) updateObligationApi(updated);
+    }
+  }, [obligations, addObligationApi, updateObligationApi, deleteObligationApi]);
+
+  if (!token) {
+    return (
+      <div className="p-4 max-w-sm mx-auto space-y-2">
+        <h1 className="text-xl font-semibold">Project Thrive Login</h1>
+        <input className="w-full p-2 border" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className="w-full p-2 border" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <div className="flex gap-2">
+          <Button onClick={handleLogin}>Login</Button>
+          <Button variant="secondary" onClick={handleRegister}>Register</Button>
+        </div>
+      </div>
+    );
+  }
 
   function handleExport(kind: 'json'|'csv'|'pdf') {
     const payload = { budgets, recurring, goals, debts, bnpl };
@@ -125,11 +219,11 @@ export default function App(){
 
   function handleImport(payload: ImportPayload) {
     try {
-      setBudgets(payload.budgets);
-      setDebts(payload.debts);
+      payload.budgets.forEach((b) => addBudget(b));
+      payload.debts.forEach((d) => addDebtApi(d));
       setRecurring(payload.recurring);
-      setGoals(payload.goals);
-      if (payload.bnpl) setBnpl(payload.bnpl);
+      payload.goals.forEach((g) => addGoalApi(g));
+      if (payload.bnpl) payload.bnpl.forEach((p) => addBnplApi(p));
       toast.success('Import complete');
     } catch (e) {
       toast.error('Import failed: ' + (e as any)?.message);
@@ -159,6 +253,7 @@ export default function App(){
             <Button variant="secondary" onClick={()=>handleExport('json')}>Export JSON</Button>
             <Button variant="secondary" onClick={()=>handleExport('csv')}>CSV</Button>
             <Button variant="secondary" onClick={()=>handleExport('pdf')}>PDF</Button>
+            <Button variant="secondary" onClick={()=>setToken(null)}>Logout</Button>
             <ThemeToggle />
           </div>
         </div>
@@ -245,9 +340,9 @@ export default function App(){
 
       <BNPLTrackerModal open={showBNPL} onClose={()=>setShowBNPL(false)} plans={bnpl} />
       <ShiftImpactModal open={showShiftImpact} onClose={()=>setShowShiftImpact(false)} />
-      <ManageDebtsModal open={showManageDebts} onClose={()=>setShowManageDebts(false)} debts={debts} onChange={setDebts} />
-      <ManageGoalsModal open={showManageGoals} onClose={()=>setShowManageGoals(false)} goals={goals} onChange={setGoals} />
-      <ManageObligationsModal open={showManageObligations} onClose={()=>setShowManageObligations(false)} obligations={obligations} onChange={setObligations} />
+      <ManageDebtsModal open={showManageDebts} onClose={()=>setShowManageDebts(false)} debts={debts} onChange={handleDebtsChange} />
+      <ManageGoalsModal open={showManageGoals} onClose={()=>setShowManageGoals(false)} goals={goals} onChange={handleGoalsChange} />
+      <ManageObligationsModal open={showManageObligations} onClose={()=>setShowManageObligations(false)} obligations={obligations} onChange={handleObligationsChange} />
       <ImportDataModal open={showImport} onClose={()=>setShowImport(false)} onImport={handleImport} />
       <CalculatorModal open={showCalc} onClose={()=>setShowCalc(false)} debts={debts} />
     </div>
