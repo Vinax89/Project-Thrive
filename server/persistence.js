@@ -1,4 +1,5 @@
 const fs = require('fs');
+const fsp = fs.promises;
 const path = require('path');
 
 const DEFAULT_STRUCTURE = () => ({
@@ -19,13 +20,15 @@ function getDataPaths(dataDir) {
   };
 }
 
-function loadDB(dataDir) {
+async function loadDB(dataDir) {
   const { dbFile } = getDataPaths(dataDir);
-  if (!fs.existsSync(dbFile)) {
+  try {
+    await fsp.access(dbFile);
+  } catch {
     return DEFAULT_STRUCTURE();
   }
   try {
-    const raw = fs.readFileSync(dbFile, 'utf-8');
+    const raw = await fsp.readFile(dbFile, 'utf-8');
     const parsed = JSON.parse(raw);
     // Basic shape check
     if (!parsed || typeof parsed !== 'object' || !parsed.users) {
@@ -38,9 +41,9 @@ function loadDB(dataDir) {
   }
 }
 
-function atomicWrite(filePath, tmpPath, data) {
-  fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
-  fs.renameSync(tmpPath, filePath);
+async function atomicWrite(filePath, tmpPath, data) {
+  await fsp.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+  await fsp.rename(tmpPath, filePath);
 }
 
 class Store {
@@ -48,12 +51,16 @@ class Store {
     this.dataDir = opts.dataDir || './data';
     const paths = getDataPaths(this.dataDir);
     this.paths = paths;
-    this.db = loadDB(this.dataDir);
+    this.db = DEFAULT_STRUCTURE();
   }
 
-  save() {
+  async load() {
+    this.db = await loadDB(this.dataDir);
+  }
+
+  async save() {
     const { dbFile, tmpFile } = this.paths;
-    atomicWrite(dbFile, tmpFile, this.db);
+    await atomicWrite(dbFile, tmpFile, this.db);
   }
 
   ensureUser(email) {
@@ -73,9 +80,9 @@ class Store {
     return this.db.users[email];
   }
 
-  setUser(email, userData) {
+  async setUser(email, userData) {
     this.db.users[email] = userData;
-    this.save();
+    await this.save();
   }
 }
 

@@ -56,12 +56,12 @@ app.get('/api/healthz', (req, res) => {
 });
 
 // Auth
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ error: 'email required' });
   // No password for this demo; in real life, hash passwords!
   store.ensureUser(email);
-  store.save();
+  await store.save();
   const token = makeToken({ email }, JWT_SECRET);
   res.json({ token, email });
 });
@@ -84,33 +84,33 @@ function listRouter(key) {
     res.json(user[key] || []);
   });
   // Create
-  router.post('/', auth, (req, res) => {
+  router.post('/', auth, async (req, res) => {
     const user = store.getUser(req.user.email);
     const item = { id: req.body.id || String(Date.now()), ...req.body };
     user[key] = user[key] || [];
     user[key].push(item);
-    store.save();
+    await store.save();
     res.status(201).json(item);
   });
   // Update
-  router.put('/:id', auth, (req, res) => {
+  router.put('/:id', auth, async (req, res) => {
     const user = store.getUser(req.user.email);
     const id = req.params.id;
     const arr = user[key] || [];
     const idx = arr.findIndex(x => String(x.id) === String(id));
     if (idx === -1) return res.status(404).json({ error: 'not found' });
     arr[idx] = { ...arr[idx], ...req.body, id };
-    store.save();
+    await store.save();
     res.json(arr[idx]);
   });
   // Delete
-  router.delete('/:id', auth, (req, res) => {
+  router.delete('/:id', auth, async (req, res) => {
     const user = store.getUser(req.user.email);
     const id = req.params.id;
     const arr = user[key] || [];
     const next = arr.filter(x => String(x.id) !== String(id));
     user[key] = next;
-    store.save();
+    await store.save();
     res.status(204).end();
   });
   return router;
@@ -122,6 +122,14 @@ app.use('/api/goals', listRouter('goals'));
 app.use('/api/obligations', listRouter('obligations'));
 app.use('/api/bnpl', listRouter('bnpl'));
 
-app.listen(PORT, () => {
-  console.log(`[server] listening on http://localhost:${PORT} (${NODE_ENV})`);
+async function start() {
+  await store.load();
+  app.listen(PORT, () => {
+    console.log(`[server] listening on http://localhost:${PORT} (${NODE_ENV})`);
+  });
+}
+
+start().catch(err => {
+  console.error('[server] failed to start', err);
+  process.exit(1);
 });
