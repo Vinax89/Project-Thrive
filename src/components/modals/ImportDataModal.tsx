@@ -2,17 +2,27 @@ import React, { useState } from 'react';
 import Modal from '../Modal';
 import Button from '../Button';
 import { importSchema, type ImportPayload } from '../../schema/import';
+import type { Budget, Transaction } from '../../types';
 export type { ImportPayload } from '../../schema/import';
 
 export default function ImportDataModal({
-  open, onClose, onImport
+  open,
+  onClose,
+  onImport,
+  budgets,
+  onTransactions,
 }: {
   open: boolean;
   onClose: () => void;
   onImport: (payload: ImportPayload) => void;
+  budgets: Budget[];
+  onTransactions?: (txns: Transaction[]) => void;
 }) {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // budgets are currently unused but may support transaction category mapping in the future
+  void budgets;
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -31,6 +41,9 @@ export default function ImportDataModal({
         return;
       }
       onImport(result.data);
+      if (onTransactions && result.data.transactions) {
+        onTransactions(result.data.transactions);
+      }
       onClose();
     } catch (e) {
       setError('Invalid JSON: ' + (e instanceof Error ? e.message : String(e)));
