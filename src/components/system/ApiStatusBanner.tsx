@@ -14,13 +14,13 @@ export default function ApiStatusBanner() {
     <div className="w-full bg-yellow-500 text-black text-sm py-2 px-4">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         <span>Offline/local mode — {msg}. Some data may be cached only.</span>
-        <a
-          href=""
-          onClick={(e) => { e.preventDefault(); location.reload(); }}
-          className="underline"
+        <button
+          type="button"
+          onClick={() => location.reload()}
+          className="underline px-2 py-1 rounded"
         >
           Retry
-        </a>
+        </button>
       </div>
     </div>
   );
