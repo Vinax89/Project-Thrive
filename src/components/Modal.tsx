@@ -12,9 +12,11 @@ export default function Modal({
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<Element | null>(null);
 
   useEffect(() => {
     if (!open) return;
+    previouslyFocused.current = typeof document !== 'undefined' ? document.activeElement : null;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     if (typeof window !== 'undefined') {
       window.addEventListener('keydown', onKey);
@@ -23,6 +25,10 @@ export default function Modal({
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('keydown', onKey);
+      }
+      const el = previouslyFocused.current as HTMLElement | null;
+      if (el && typeof document !== 'undefined' && document.contains(el)) {
+        el.focus();
       }
     };
   }, [open, onClose]);
