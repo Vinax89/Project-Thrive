@@ -242,6 +242,7 @@ export default function App(){
     return (
       <div className="p-4 max-w-sm mx-auto space-y-2">
         <h1 className="text-xl font-semibold">Project Thrive Login</h1>
+        <p className="text-sm text-gray-600">Enter your email and password. Passwords are securely hashed.</p>
         <input className="w-full p-2 border" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input className="w-full p-2 border" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <div className="flex gap-2">

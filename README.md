@@ -43,6 +43,7 @@ npm start
 ```
 
 The API listens on `http://localhost:3000` and requires a valid token from `/api/auth/register` or `/api/auth/login`.
+Registration and login expect both email and password; passwords are hashed with bcrypt before storage.
 
 ### Testing and Linting
 

@@ -94,9 +94,10 @@ class Store {
     return this._pending;
   }
 
-  ensureUser(email) {
+  createUser(email, passwordHash) {
     if (!this.db.users[email]) {
       this.db.users[email] = {
+        passwordHash,
         budgets: [],
         debts: [],
         goals: [],
@@ -107,7 +108,6 @@ class Store {
   }
 
   getUser(email) {
-    this.ensureUser(email);
     return this.db.users[email];
   }
 

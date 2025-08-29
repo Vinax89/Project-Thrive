@@ -6,6 +6,7 @@ const { Store } = require('./persistence');
 const { makeToken, verifyToken } = require('./utils/jwt');
 const { Debt } = require('./validators');
 const rateLimit = require('express-rate-limit');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 
@@ -59,20 +60,23 @@ app.get('/api/healthz', (req, res) => {
 
 // Auth
 app.post('/api/auth/register', async (req, res) => {
-  const { email } = req.body || {};
-  if (!email) return res.status(400).json({ error: 'email required' });
-  // No password for this demo; in real life, hash passwords!
-  store.ensureUser(email);
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  if (store.getUser(email)) return res.status(400).json({ error: 'user exists' });
+  const hash = await bcrypt.hash(password, 10);
+  store.createUser(email, hash);
   await store.save();
   const token = makeToken({ email }, JWT_SECRET);
   res.json({ token, email });
 });
 
-app.post('/api/auth/login', (req, res) => {
-  const { email } = req.body || {};
-  if (!email) return res.status(400).json({ error: 'email required' });
-  // Accept any email that exists (or create it for demo)
-  store.ensureUser(email);
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+  const user = store.getUser(email);
+  if (!user) return res.status(401).json({ error: 'invalid credentials' });
+  const ok = await bcrypt.compare(password, user.passwordHash);
+  if (!ok) return res.status(401).json({ error: 'invalid credentials' });
   const token = makeToken({ email }, JWT_SECRET);
   res.json({ token, email });
 });
@@ -83,11 +87,13 @@ function listRouter(key) {
   // Read all
   router.get('/', auth, (req, res) => {
     const user = store.getUser(req.user.email);
+    if (!user) return res.status(404).json({ error: 'user not found' });
     res.json(user[key] || []);
   });
   // Create
   router.post('/', auth, async (req, res) => {
     const user = store.getUser(req.user.email);
+    if (!user) return res.status(404).json({ error: 'user not found' });
     const item = { id: req.body.id || String(Date.now()), ...req.body };
     try {
       const valid = key==='debts' ? Debt.parse(item) : item;
@@ -102,6 +108,7 @@ function listRouter(key) {
   // Update
   router.put('/:id', auth, async (req, res) => {
     const user = store.getUser(req.user.email);
+    if (!user) return res.status(404).json({ error: 'user not found' });
     const id = req.params.id;
     const arr = user[key] || [];
     const idx = arr.findIndex(x => String(x.id) === String(id));
@@ -118,6 +125,7 @@ function listRouter(key) {
   // Delete
   router.delete('/:id', auth, async (req, res) => {
     const user = store.getUser(req.user.email);
+    if (!user) return res.status(404).json({ error: 'user not found' });
     const id = req.params.id;
     const arr = user[key] || [];
     const next = arr.filter(x => String(x.id) !== String(id));
@@ -130,6 +138,7 @@ function listRouter(key) {
 
 app.get('/api/data', auth, (req, res) => {
   const user = store.getUser(req.user.email);
+  if (!user) return res.status(404).json({ error: 'user not found' });
   res.json({
     budgets: user.budgets || [],
     goals: user.goals || [],
