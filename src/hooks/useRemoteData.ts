@@ -9,27 +9,38 @@ export default function useRemoteData(token: string | null) {
   const [debts, setDebts] = useState<Debt[]>([]);
   const [obligations, setObligations] = useState<Obligation[]>([]);
   const [bnpl, setBnpl] = useState<BNPLPlan[]>([]);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!token) return;
-    fetch(`${API}/data`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
+    const controller = new AbortController();
+
+    const load = async () => {
+      try {
+        const res = await fetch(`${API}/data`, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          throw new Error(`Failed to fetch data: ${res.status} ${res.statusText}`);
+        }
+        const data = await res.json();
         setBudgets(data.budgets || []);
         setGoals(data.goals || []);
         setDebts(data.debts || []);
         setObligations(data.obligations || []);
         setBnpl(data.bnpl || []);
-      })
-      .catch(() => {
-        setBudgets([]);
-        setGoals([]);
-        setDebts([]);
-        setObligations([]);
-        setBnpl([]);
-      });
+        setError(null);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        console.error(err);
+        setError(err as Error);
+      }
+    };
+
+    load();
+
+    return () => controller.abort();
   }, [token]);
 
   function crud<T extends { id: string }>(
@@ -39,16 +50,27 @@ export default function useRemoteData(token: string | null) {
     const create = useCallback(
       async (item: T) => {
         if (!token) return;
-        const res = await fetch(`${API}/${path}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(item),
-        });
-        const data = await res.json();
-        setList((prev) => [...prev, data]);
+        try {
+          const res = await fetch(`${API}/${path}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(item),
+          });
+          if (!res.ok) {
+            throw new Error(`Failed to create ${path}`);
+          }
+          const data = await res.json();
+          setList((prev) => [...prev, data]);
+          setError(null);
+          return data;
+        } catch (err) {
+          console.error(err);
+          setError(err as Error);
+          throw err;
+        }
       },
       [path, token]
     );
@@ -56,15 +78,25 @@ export default function useRemoteData(token: string | null) {
     const update = useCallback(
       async (item: T) => {
         if (!token) return;
-        await fetch(`${API}/${path}/${item.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(item),
-        });
-        setList((prev) => prev.map((x) => (x.id === item.id ? item : x)));
+        try {
+          const res = await fetch(`${API}/${path}/${item.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(item),
+          });
+          if (!res.ok) {
+            throw new Error(`Failed to update ${path}`);
+          }
+          setList((prev) => prev.map((x) => (x.id === item.id ? item : x)));
+          setError(null);
+        } catch (err) {
+          console.error(err);
+          setError(err as Error);
+          throw err;
+        }
       },
       [path, token]
     );
@@ -72,11 +104,21 @@ export default function useRemoteData(token: string | null) {
     const remove = useCallback(
       async (id: string) => {
         if (!token) return;
-        await fetch(`${API}/${path}/${id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setList((prev) => prev.filter((x) => x.id !== id));
+        try {
+          const res = await fetch(`${API}/${path}/${id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) {
+            throw new Error(`Failed to delete ${path}`);
+          }
+          setList((prev) => prev.filter((x) => x.id !== id));
+          setError(null);
+        } catch (err) {
+          console.error(err);
+          setError(err as Error);
+          throw err;
+        }
       },
       [path, token]
     );
@@ -116,5 +158,6 @@ export default function useRemoteData(token: string | null) {
     addBnplApi: bnplOps.create,
     updateBnplApi: bnplOps.update,
     deleteBnplApi: bnplOps.remove,
+    error,
   } as const;
 }
