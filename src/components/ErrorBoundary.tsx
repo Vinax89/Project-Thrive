@@ -5,7 +5,10 @@ type State = { hasError: boolean; error?: unknown };
 export default class ErrorBoundary extends React.Component<React.PropsWithChildren, State> {
   state: State = { hasError: false };
   static getDerivedStateFromError(error: unknown): State { return { hasError: true, error }; }
-  componentDidCatch(error: unknown) { console.error(error); }
+  componentDidCatch(error: unknown, errorInfo: React.ErrorInfo) {
+    console.error(error, errorInfo);
+    // TODO: integrate remote logging/reporting service
+  }
   render() {
     if (this.state.hasError) {
       return (
