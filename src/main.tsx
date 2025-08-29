@@ -15,10 +15,15 @@ function rescheduleNotifications(reg: ServiceWorkerRegistration) {
         /* periodic sync may be unavailable */
       });
   }
-
-  const pending = JSON.parse(
-    localStorage.getItem('pending-notifications') || '[]'
-  );
+  let pending: unknown[] = [];
+  try {
+    pending = JSON.parse(
+      localStorage.getItem('pending-notifications') || '[]'
+    );
+  } catch (err) {
+    console.warn('Failed to parse pending notifications, clearing', err);
+    localStorage.removeItem('pending-notifications');
+  }
   for (const note of pending) {
     reg.active?.postMessage({ type: 'schedule', payload: note });
   }
