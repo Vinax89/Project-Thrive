@@ -37,7 +37,10 @@ export default function CalendarExportButtons({ debts, year, month }: { debts: D
     const header = ["Date","Name","Amount","Autopay","Notes"].join(",");
     const body = rows.map(r => [r.date, r.name, r.amount, r.autopay?"Yes":"No", (r.notes||"").replace(/"/g,'""')].map(x=>`"${x}"`).join(",")).join("\n");
     const blob = new Blob([header+"\n"+body], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `${title}.csv`; a.click();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `${title}.csv`; a.click();
+    URL.revokeObjectURL(url); a.remove();
   }, [debts, year, month, title]);
 
   return (
