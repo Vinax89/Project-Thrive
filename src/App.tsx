@@ -267,15 +267,17 @@ export default function App(){
     if (kind === 'ics') exportICS('chatpay-schedule.ics', bnpl, obligations);
   }
 
-  function handleImport(payload: ImportPayload) {
+  async function handleImport(payload: ImportPayload) {
     try {
-      payload.budgets.forEach((b) => addBudget(b));
+      const promises: Promise<unknown>[] = [];
+      payload.budgets.forEach((b) => promises.push(addBudget(b)));
       handleDebtsChange(payload.debts);
       setRecurring(payload.recurring);
       handleGoalsChange(payload.goals);
       if (payload.obligations) handleObligationsChange(payload.obligations);
-      if (payload.bnpl) payload.bnpl.forEach((p) => addBnplApi(p));
+      if (payload.bnpl) payload.bnpl.forEach((p) => promises.push(addBnplApi(p)));
       if (payload.transactions) handleTransactions(payload.transactions);
+      await Promise.all(promises);
       toast.success('Import complete');
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
