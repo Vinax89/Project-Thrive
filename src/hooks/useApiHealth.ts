@@ -12,7 +12,7 @@ export function useApiHealth(apiBase?: string, intervalMs = 15000) {
   const [health, setHealth] = useState<HealthStatus>({ status: 'unknown' });
 
   useEffect(() => {
-    let timer: any;
+    let timer: ReturnType<typeof setInterval> | undefined;
     const url = (apiBase || import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
     async function ping() {
@@ -25,8 +25,9 @@ export function useApiHealth(apiBase?: string, intervalMs = 15000) {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const json = await r.json();
         setHealth({ status: 'ok', version: json.version, uptime: json.uptime, node: json.node });
-      } catch (e: any) {
-        setHealth({ status: 'down', error: e?.message || 'fetch failed' });
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'fetch failed';
+        setHealth({ status: 'down', error: message });
       }
     }
 
