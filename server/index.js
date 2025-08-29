@@ -68,11 +68,16 @@ app.post('/api/auth/register', async (req, res) => {
   res.json({ token, email });
 });
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { email } = req.body || {};
   if (!email) return res.status(400).json({ error: 'email required' });
   // Accept any email that exists (or create it for demo)
   store.ensureUser(email);
+  try {
+    await store.save();
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to save' });
+  }
   const token = makeToken({ email }, JWT_SECRET);
   res.json({ token, email });
 });
@@ -89,15 +94,20 @@ function listRouter(key) {
   router.post('/', auth, async (req, res) => {
     const user = store.getUser(req.user.email);
     const item = { id: req.body.id || String(Date.now()), ...req.body };
+    let valid;
     try {
-      const valid = key==='debts' ? Debt.parse(item) : item;
+      valid = key==='debts' ? Debt.parse(item) : item;
       user[key] = user[key] || [];
       user[key].push(valid);
-      store.save();
-      res.status(201).json(valid);
     } catch(e){
       return res.status(422).json({ error: 'Invalid payload', details: e.errors ?? String(e) });
     }
+    try {
+      await store.save();
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to save' });
+    }
+    res.status(201).json(valid);
   });
   // Update
   router.put('/:id', auth, async (req, res) => {
@@ -109,11 +119,15 @@ function listRouter(key) {
     try {
       const patch = key==='debts' ? Debt.partial().parse(req.body) : req.body;
       arr[idx] = { ...arr[idx], ...patch, id };
-      store.save();
-      res.json(arr[idx]);
     } catch(e){
       return res.status(422).json({ error: 'Invalid payload', details: e.errors ?? String(e) });
     }
+    try {
+      await store.save();
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to save' });
+    }
+    res.json(arr[idx]);
   });
   // Delete
   router.delete('/:id', auth, async (req, res) => {
@@ -122,7 +136,11 @@ function listRouter(key) {
     const arr = user[key] || [];
     const next = arr.filter(x => String(x.id) !== String(id));
     user[key] = next;
-    store.save();
+    try {
+      await store.save();
+    } catch (e) {
+      return res.status(500).json({ error: 'Failed to save' });
+    }
     res.status(204).end();
   });
   return router;
