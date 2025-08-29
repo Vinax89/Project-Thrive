@@ -33,6 +33,8 @@ const SpendingHeatmap = lazy(() => import('./components/reports/SpendingHeatmap'
 const GoalWaterfall = lazy(() => import('./components/reports/GoalWaterfall'));
 const SankeyFlow = lazy(() => import('./components/reports/SankeyFlow'));
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 type Tab = 'dashboard' | 'budgets' | 'projection' | 'reports';
 
 export default function App(){
@@ -132,30 +134,38 @@ export default function App(){
 
   useHotkeys(hotkeys);
   async function handleLogin() {
-    const res = await fetch('http://localhost:3000/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setToken(data.token);
-    } else {
-      toast.error('Login failed');
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setToken(data.token);
+      } else {
+        toast.error('Login failed');
+      }
+    } catch {
+      toast.error('Network error during login');
     }
   }
 
   async function handleRegister() {
-    const res = await fetch('http://localhost:3000/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setToken(data.token);
-    } else {
-      toast.error('Registration failed');
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setToken(data.token);
+      } else {
+        toast.error('Registration failed');
+      }
+    } catch {
+      toast.error('Network error during registration');
     }
   }
 
